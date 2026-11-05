@@ -1,6 +1,6 @@
 // Check publication before leaving the website for a GitHub download.
-const releaseApi = 'https://api.github.com/repos/invicto-labs/Watermark-remover/releases/latest';
-const downloadPrefix = 'https://github.com/invicto-labs/Watermark-remover/releases/download/';
+const releaseApi = 'https://api.github.com/repos/raysan-sure/Clearpage/releases/latest';
+const downloadPrefix = 'https://github.com/raysan-sure/Clearpage/releases/download/';
 const links = document.querySelectorAll('a[href$="/releases/latest/download/ClearPage-Windows-x64.zip"]');
 const notice = document.createElement('dialog');
 notice.className = 'download-notice';

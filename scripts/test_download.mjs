@@ -30,7 +30,7 @@ test('no release stays on the website with an availability message', async () =>
 });
 
 test('only an uploaded stable Windows asset starts a download', async () => {
-  const url = 'https://github.com/invicto-labs/Watermark-remover/releases/download/v2.2/ClearPage-Windows-x64.zip';
+  const url = 'https://github.com/raysan-sure/Clearpage/releases/download/v2.2/ClearPage-Windows-x64.zip';
   const asset = { name: 'ClearPage-Windows-x64.zip', state: 'uploaded', size: 100, browser_download_url: url };
   const response = asset => ({ ok: true, json: async () => ({ draft: false, prerelease: false, assets: [asset] }) });
   assert.deepEqual((await clickDownload(response(asset))).destinations, [url]);

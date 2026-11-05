@@ -1,5 +1,16 @@
 # ClearPage local download website
 
+## Vercel download site
+
+Deploy this directory only, with Framework Preset **Other**, no install/build
+command, and output directory `.`. For a Git-connected project, set Root Directory
+to `website`. The Python application and payment service are not deployed here.
+`vercel.json` keeps this a static HTML/CSS/JavaScript deployment.
+
+Download buttons check published releases in `raysan-sure/Clearpage`. Until a
+stable release includes `ClearPage-Windows-x64.zip`, visitors see a download
+availability message. Payments remain disabled.
+
 To preview with an explicitly built testing ZIP, run from the repository root:
 
 ```powershell
