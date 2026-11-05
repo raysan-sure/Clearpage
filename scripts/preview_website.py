@@ -22,7 +22,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path in ('/', '/index.html'):
             page = (ROOT/'website/index.html').read_text(encoding='utf-8')
-            page = page.replace('https://github.com/invicto-labs/Watermark-remover/releases/latest/download/ClearPage-Windows-x64.zip', DOWNLOAD)
+            page = page.replace('https://github.com/raysan-sure/Clearpage/releases/latest/download/ClearPage-Windows-x64.zip', DOWNLOAD)
             page = page.replace('Download latest for Windows', 'Download preview for Windows')
             page = page.replace('Latest published stable release', 'Local preview build · Payments disabled')
             body = page.encode('utf-8')

@@ -63,7 +63,7 @@ the new ZIP to a new folder and retain their existing ClearPage profile.
 
 Each verified production release includes `ClearPage-Windows-x64.zip`, identical
 to its versioned ZIP. All website download buttons point directly to
-`https://github.com/invicto-labs/Watermark-remover/releases/latest/download/ClearPage-Windows-x64.zip`.
+`https://github.com/raysan-sure/Clearpage/releases/latest/download/ClearPage-Windows-x64.zip`.
 GitHub resolves that URL to the latest published stable release, so future releases
 require no website edits or copying ZIPs to Render. Drafts and preview artifacts
 are never published by this workflow; the alias is checked against the same SHA-256

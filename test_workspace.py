@@ -164,7 +164,7 @@ class WorkspaceTests(unittest.TestCase):
         payload={'tag_name':'v'+newer,'draft':False,'prerelease':False,'html_url':'https://untrusted.example','assets':[]}
         for ready in (False,True):
             updates._cache.clear()
-            if ready:payload['assets']=[{'name':f'ClearPage-{newer}-Windows-x64.zip','state':'uploaded','size':100,'browser_download_url':f'https://github.com/invicto-labs/Watermark-remover/releases/download/v{newer}/ClearPage-{newer}-Windows-x64.zip'}]
+            if ready:payload['assets']=[{'name':f'ClearPage-{newer}-Windows-x64.zip','state':'uploaded','size':100,'browser_download_url':f'https://github.com/raysan-sure/Clearpage/releases/download/v{newer}/ClearPage-{newer}-Windows-x64.zip'}]
             with patch('urllib.request.urlopen',return_value=BytesIO(json.dumps(payload).encode())) as call:
                 response=workspace.latest_release()
                 self.assertEqual(response['available'],ready)

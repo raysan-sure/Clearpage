@@ -23,7 +23,7 @@ def hosted_app():
     def download():
         # Compatibility URL: follow GitHub's latest published stable release.
         # No customer credentials, private files, or stale local ZIP are served.
-        response = redirect('https://github.com/invicto-labs/Watermark-remover/releases/latest/download/ClearPage-Windows-x64.zip', code=302)
+        response = redirect('https://github.com/raysan-sure/Clearpage/releases/latest/download/ClearPage-Windows-x64.zip', code=302)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Referrer-Policy'] = 'no-referrer'
         return response
