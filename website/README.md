@@ -68,3 +68,8 @@ whole application folder. Never bundle merchant secrets or seller signing keys.
 
 The current Windows build requires online authorization. See HOSTING.md for the
 Render deployment, persistent storage, secrets and build-order requirements.
+
+Live static website: https://clearpage-omega.vercel.app
+Vercel project: raysansure-2964/clearpage. Deployed with the CLI.
+Automatic Git deployments require a GitHub login connection in this Vercel account.
+
