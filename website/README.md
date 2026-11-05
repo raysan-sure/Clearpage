@@ -7,9 +7,11 @@ command, and output directory `.`. For a Git-connected project, set Root Directo
 to `website`. The Python application and payment service are not deployed here.
 `vercel.json` keeps this a static HTML/CSS/JavaScript deployment.
 
-Download buttons check published releases in `raysan-sure/Clearpage`. Until a
-stable release includes `ClearPage-Windows-x64.zip`, visitors see a download
-availability message. Payments remain disabled.
+Download buttons check published stable releases in `raysan-sure/Clearpage`.
+When no stable release exists, they offer the explicitly approved
+`v2.3-preview.1` prerelease. Its verified `ClearPage-Windows-x64.zip` opens the
+Windows app, but PDF processing remains locked until payment hosting is configured.
+Payments remain disabled. The page labels this preview limitation before download.
 
 To preview with an explicitly built testing ZIP, run from the repository root:
 

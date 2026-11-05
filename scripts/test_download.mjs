@@ -8,6 +8,7 @@ async function clickDownload(response, hostname = 'clearpage.onrender.com') {
   let click;
   const status = { textContent: '' };
   const destinations = [];
+  const responses = Array.isArray(response) ? [...response] : null;
   const dialog = { querySelector: () => status, showModal() { this.open = true; } };
   vm.runInNewContext(script, {
     document: {
@@ -17,7 +18,7 @@ async function clickDownload(response, hostname = 'clearpage.onrender.com') {
     },
     window: { location: { hostname, assign: url => destinations.push(url) } },
     AbortSignal,
-    fetch: async () => { if (response instanceof Error) throw response; return response; },
+    fetch: async () => { const value = responses ? responses.shift() : response; if (value instanceof Error) throw value; return value; },
   });
   await click({ preventDefault() {} });
   return { message: status.textContent, destinations };
@@ -43,4 +44,18 @@ test('network errors stay on the website with a retry message', async () => {
   const result = await clickDownload(new Error('offline'));
   assert.match(result.message, /try again/);
   assert.deepEqual(result.destinations, []);
+});
+
+test('missing stable release falls back only to the explicitly published preview', async () => {
+  const url = 'https://github.com/raysan-sure/Clearpage/releases/download/v2.3-preview.1/ClearPage-Windows-x64.zip';
+  const release = { draft: false, prerelease: true, tag_name: 'v2.3-preview.1', assets: [
+    { name: 'ClearPage-Windows-x64.zip', state: 'uploaded', size: 100, browser_download_url: url },
+  ] };
+  const run = item => clickDownload([{ status: 404 }, { ok: true, json: async () => item }]);
+  const result = await run(release);
+  assert.deepEqual(result.destinations, [url]);
+  assert.match(result.message, /PDF processing remains locked/);
+  for (const change of [{ draft: true }, { prerelease: false }, { tag_name: 'v2.3-preview.2' }, { assets: [] }]) {
+    assert.deepEqual((await run({ ...release, ...change })).destinations, []);
+  }
 });
