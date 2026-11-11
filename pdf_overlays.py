@@ -232,6 +232,42 @@ def unofficial_text_ranges(ops, resources):
         return []
 
 
+def lettered_unofficial_ranges(ops, resources):
+    """Recorder overlay with ten individually positioned, translucent glyphs."""
+    word = 'UNOFFICIAL'
+    start = len(ops) - (3 + 5*len(word))
+    if start < 1 or [op for _,op in ops[start:start+2]] != [b'rg', b'gs'] or ops[-1][1] != b'Q':
+        return []
+    try:
+        rgb, state_name = ops[start][0], ops[start+1][0][0]
+        state = resolved(resolved(resources['/ExtGState'])[state_name])
+        if len(rgb)!=3 or any(abs(float(v)-.25098)>.0001 for v in rgb) or abs(float(state['/ca'])-.35)>.001:
+            return []
+        fonts = resolved(resources['/Font'])
+        objects = resolved(resources['/XObject'])
+        if not any(op==b'Do' and resolved(objects.get(args[0],{})).get('/Subtype')=='/Image'
+                   for args,op in ops[:start]):
+            return []
+        last = None
+        for j,letter in enumerate(word):
+            offset = start+2+j*5
+            block = ops[offset:offset+5]
+            if [op for _,op in block] != [b'BT', b'Tm', b'Tf', b'Tj', b'ET']:
+                return []
+            a,b,c,d,x,y = map(float,block[1][0])
+            font_name,size = block[2][0]
+            font = resolved(fonts[font_name])
+            if (str(block[3][0][0])!=letter or size!=1 or font.get('/Subtype')!='/TrueType'
+                    or not str(font.get('/BaseFont','')).endswith('Calibri-Bold')
+                    or not (70<a<110 and -150<b<-110 and abs(c-b)<2 and abs(d+a)<2)
+                    or (last and not (x>last[0] and y<last[1] and last[2]==font_name))):
+                return []
+            last = x,y,font_name
+        return [(start+2,len(ops)-1,'Diagonal UNOFFICIAL letters')]
+    except (KeyError, TypeError, ValueError, IndexError, AttributeError):
+        return []
+
+
 def harrison_map_overlay(stream, xobjects):
     # The top image contains map content as well as the stamp. Remove it only
     # when the drawing instructions and all underlying scans are verified.
@@ -257,7 +293,7 @@ def rewrite_node(node, resources, owner, writer=None, depth=0, ancestors=()):
     ops = stream.operations
     cook = cook_ranges(ops, resources)
     apdf = apdf_ranges(ops, resources)
-    unofficial = unofficial_text_ranges(ops, resources)
+    unofficial = unofficial_text_ranges(ops, resources) + lettered_unofficial_ranges(ops, resources)
     ranges = cook + apdf + unofficial
     remove = {i for start, end, _ in ranges for i in range(start, end)}
     labels = ['Cook County'] * len(cook) + [label for _, _, label in apdf + unofficial]

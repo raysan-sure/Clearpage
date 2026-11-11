@@ -1,5 +1,6 @@
 """Read-only, bounded preset suggestions. No AI calls, edits, or exports."""
 from PIL import Image
+from pypdf.generic import DictionaryObject, NameObject
 import numpy as np
 from pdf_overlays import read_pdf
 import repeated_copy
@@ -12,10 +13,22 @@ import scan_patterns
 import dotted_scans
 import screened_scans
 import kane_outline
+import licensed_diagonal
+import hocking_outline
+import union_parish
+import henry_red
+import lake_outline
+import preble_resampled
 import search_package_dots
 import page_polarity
 
 REASONS = {
+    'lake_outline': 'The hollow diagonal UNOFFICIAL COPY outline matches the Lake County scan.',
+    'preble_unofficial': 'The diagonal UNOFFICIAL COPY lettering has the Preble County print pattern.',
+    'henry_red': 'The same red diagonal “NOT AN OFFICIAL COPY” stamp appears on multiple scanned pages.',
+    'union_parish': 'Three pale purple UNOFFICIAL stamps match the Union Parish pattern.',
+    'hocking_outline': 'Matches the outlined Hocking County Recorder “unofficial copy” text.',
+    'licensed_diagonal': 'Matches the diagonal “LICENSED TO FIRST AMERICAN DATA TREE LLC” stamp. Review crossings with words and signatures.',
     'kane_outline': 'Matches the Kane County diagonal dotted-outline “Unofficial” stamp. Review small intersections with text.',
     'screened_unofficial': 'Diagonal dotted “Un-Official” matches this scan. Removes the pattern and repairs damaged strokes; review the result.',
     'repeated_copy': 'Small gray copy words repeat across the page. Review overlaps and dark headers.',
@@ -45,6 +58,30 @@ def suggest(source, count, overlays, image_for, assets):
             page = reader.pages[index]
             if overlays[index].get('overlays'):
                 add('overlay', index)
+            if lake_outline.suggested(source, index):
+                add('lake_outline', index)
+                continue
+            if preble_resampled.suggested(source, index):
+                add('preble_unofficial', index)
+                continue
+            if henry_red.suggested(source, index):
+                add('henry_red', index)
+                continue
+            # Some recorder packages store resource dictionaries indirectly.
+            # Give the legacy detectors resolved dictionaries in this read-only reader.
+            if '/Resources' in page:
+                resources = DictionaryObject(dict(page['/Resources']))
+                for name in ('/XObject', '/Pattern'):
+                    if name in resources:
+                        resources[NameObject(name)] = resources[name]
+                page[NameObject('/Resources')] = resources
+            if hocking_outline.suggested(source, index):
+                add('hocking_outline', index)
+                continue
+            licensed = licensed_diagonal.scan_objects(page)
+            if licensed and licensed_diagonal.matches(licensed_diagonal.native_pixels(page, licensed)):
+                add('licensed_diagonal', index)
+                continue
             screened = screened_scans.scan_objects(page)
             if screened and kane_outline.matches(screened_scans.native_pixels(page, screened)):
                 add('kane_outline', index)
@@ -68,6 +105,9 @@ def suggest(source, count, overlays, image_for, assets):
             gray_found = gray_scans.scan_object(page)
             native = page.images[0].image.convert('RGB') if found or gray_found else None
             if native is not None:
+                if union_parish.stamp_boxes(np.asarray(native), (found or gray_found)[1].get('/Filter') == '/DCTDecode'):
+                    add('union_parish', index)
+                    continue
                 if gray_found and nassau_scans.clean_pixels(np.array(native))[1]['matched']:
                     add('nassau_unofficial', index)
                     continue

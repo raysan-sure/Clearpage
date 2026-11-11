@@ -7,7 +7,7 @@ export default function CleanupSuggestions({ state, presets, method, busy, onCho
     {state.loading ? <p role="status">Checking a few pages for matching watermark types…</p> : <>
       {!items.length && <p>{state.error ? 'Suggestions are unavailable. You can still choose a type below.' : 'No clear match found. Compare the examples under All cleanup types.'}</p>}
       {items.map(item => <div className="suggestion-card" key={item.method}>
-        <img className="suggestion-example" src={`/static/type-${presets.find(p => p.id === item.method).image}.${['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline'].includes(presets.find(p => p.id === item.method).image) ? 'svg' : 'webp'}`} alt="Illustrative watermark example" />
+        <img className="suggestion-example" src={`/static/type-${presets.find(p => p.id === item.method).image}.${['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(presets.find(p => p.id === item.method).image) ? 'svg' : 'webp'}`} alt="Illustrative watermark example" />
         <strong>{presets.find(p => p.id === item.method).title}</strong>
         <p>{item.reason}</p>
         <small>Found on {item.pages.length === 1 ? 'page' : 'pages'} {item.pages.join(', ')}</small>

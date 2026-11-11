@@ -35,6 +35,11 @@ import pdf_selection
 import dotted_scans
 import screened_scans
 import kane_outline
+import licensed_diagonal
+import hocking_outline
+import union_parish
+import henry_red
+import lake_outline
 import preble_scans
 import nassau_scans
 import scan_patterns
@@ -45,16 +50,19 @@ import repeated_copy
 import cleanup_suggestions
 import huntington
 import gemini_cleanup
+import pdf_compression
 
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 ROOT = Path(tempfile.mkdtemp(prefix='ClearPage-'))
 PROFILE_ROOT = Path(os.environ.get('LOCALAPPDATA', str(Path.home())))/'ClearPage'/'reviewed-pages'
 LOCK = threading.RLock()
 JOBS = {}
+NATIVE_OUTLINE = {method: module for module in (screened_scans, kane_outline, licensed_diagonal, hocking_outline, union_parish, henry_red, lake_outline)
+                  for method in module.METHODS}
 SERVER = None
 HOST = None
 app = Flask(__name__, static_folder=None)
-app.config['MAX_CONTENT_LENGTH'] = 150*1024*1024
+app.config['MAX_CONTENT_LENGTH'] = 200*1024*1024
 
 
 @app.before_request
@@ -82,7 +90,7 @@ def headers(response):
 
 @app.errorhandler(413)
 def too_large(error):
-    return jsonify(error='The file is too large. Maximum file size is 150 MB.'), 413
+    return jsonify(error='The file is too large. Maximum file size is 200 MB.'), 413
 
 
 @app.errorhandler(ValueError)
@@ -114,7 +122,7 @@ def job_for(identifier):
 
 
 def public(job):
-    return {key: job[key] for key in ('id', 'name', 'count', 'size', 'options', 'state', 'progress', 'message', 'results', 'overlays', 'input_type', 'input_note', 'ui') if key in job}
+    return {key: job[key] for key in ('id', 'name', 'count', 'size', 'options', 'state', 'progress', 'message', 'results', 'overlays', 'input_type', 'input_note', 'ui', 'compression') if key in job}
 
 
 def require_new_review(job, index=None):
@@ -188,7 +196,7 @@ def static(name):
     if name not in ('ui.js', 'ui.css', 'favicon.svg', 'app.js', 'style.css', 'repair.js', 'workspace.js', 'objects.js', 'sections.js', 'simple.css', 'simple.js',
                     'type-dotted-document.webp', 'type-dotted-map.webp', 'type-unofficial-copy.webp',
                     'type-overlay.webp', 'type-huntington.webp', 'type-repeated-diagonal.webp', 'type-polarity.svg',
-                    'type-preble.webp', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg'):
+                    'type-preble.webp', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg', 'type-licensed-diagonal.svg', 'type-hocking-outline.svg', 'type-union-parish.webp', 'type-henry-red.webp', 'type-lake-outline.webp'):
         return '', 404
     return send_file(BASE/'static'/name)
 
@@ -209,7 +217,7 @@ def upload():
                 while chunk := request.stream.read(1024*1024):
                     total += len(chunk)
                     if total > app.config['MAX_CONTENT_LENGTH']:
-                        raise ValueError('Maximum file size is 150 MB.')
+                        raise ValueError('Maximum file size is 200 MB.')
                     if total + sum(j['size'] for j in JOBS.values()) > 500*1024*1024:
                         raise ValueError('The open files exceed 500 MB. Remove finished files before adding more.')
                     target.write(chunk)
@@ -392,7 +400,7 @@ def settings(data):
         return dict(method=method, mode='careful', strokes=[], use_reviewed=False,
                     auto_restore=bool(data.get('auto_restore', False)), scan_inversion=False,
                     fix_negative=False, polarity_pages=[])
-    if method in (*dotted_scans.METHODS, *screened_scans.METHODS, *kane_outline.METHODS, *preble_scans.METHODS, *nassau_scans.METHODS, *scan_patterns.METHODS):
+    if method in (*dotted_scans.METHODS, *NATIVE_OUTLINE, *preble_scans.METHODS, *nassau_scans.METHODS, *scan_patterns.METHODS):
         return dict(method=method, mode='lama' if method == 'repeated_diagonal_ai' else 'careful', strokes=[], use_reviewed=False,
                     auto_restore=False, scan_inversion=False, fix_negative=False, polarity_pages=[])
     if method == 'polarity':
@@ -455,8 +463,8 @@ def cleanup_page(job, index, options):
 
 
 def process_page(job, index, options):
-    if options['method'] in (*screened_scans.METHODS, *kane_outline.METHODS):
-        module = kane_outline if options['method'] in kane_outline.METHODS else screened_scans
+    if options['method'] in NATIVE_OUTLINE:
+        module = NATIVE_OUTLINE[options['method']]
         before = Image.open(original(job, index)).convert('RGB')
         target, details = module.prepare(job['source'], index, job['dir'], lambda: job['cancel'])
         after = render_page(target, 0)
@@ -676,7 +684,7 @@ def process_page(job, index, options):
 
 def repair_job(identifier, data):
     job = job_for(identifier)
-    if (job.get('options') or {}).get('method') in ('gemini_draft', 'overlay', 'object', 'polarity', *dotted_scans.METHODS, *screened_scans.METHODS, *kane_outline.METHODS, *preble_scans.METHODS, *nassau_scans.METHODS, *(m for m in scan_patterns.METHODS if m != 'huntington_background')):
+    if (job.get('options') or {}).get('method') in ('gemini_draft', 'overlay', 'object', 'polarity', *dotted_scans.METHODS, *NATIVE_OUTLINE, *preble_scans.METHODS, *nassau_scans.METHODS, *(m for m in scan_patterns.METHODS if m != 'huntington_background')):
         raise ValueError('Switch to image cleanup to repair words; overlay removal and black-page correction do not apply word repairs.')
     if job['state'] not in ('review', 'done'):
         raise ValueError('Process all pages first, then repair words in the cleaned preview.')
@@ -816,7 +824,7 @@ def restoration_worker(job,clear=False):
 def restore_all_words(identifier):
     with LOCK:
         job=job_for(identifier)
-        if (job.get('options') or {}).get('method') in ('gemini_draft', 'overlay', 'object', 'polarity', *dotted_scans.METHODS, *screened_scans.METHODS, *kane_outline.METHODS, *preble_scans.METHODS, *nassau_scans.METHODS, *(m for m in scan_patterns.METHODS if m != 'huntington_background')):
+        if (job.get('options') or {}).get('method') in ('gemini_draft', 'overlay', 'object', 'polarity', *dotted_scans.METHODS, *NATIVE_OUTLINE, *preble_scans.METHODS, *nassau_scans.METHODS, *(m for m in scan_patterns.METHODS if m != 'huntington_background')):
             raise ValueError('Word restoration is disabled for overlay removal and black-page correction.')
         if job['state'] not in ('review','done'):
             raise ValueError('Process all pages before restoring words.')
@@ -1076,8 +1084,8 @@ def export_worker(job, keep):
     try:
         require_ai_review(job, keep)
         with LOCK:
-            if job['options']['method'] in (*screened_scans.METHODS, *kane_outline.METHODS):
-                module = kane_outline if job['options']['method'] in kane_outline.METHODS else screened_scans
+            if job['options']['method'] in NATIVE_OUTLINE:
+                module = NATIVE_OUTLINE[job['options']['method']]
                 module.write_clean(job['source'], job['dir']/'cleaned.pdf', keep,
                                           job['dir'], lambda:job['cancel'])
             elif job['options']['method'] in nassau_scans.METHODS:
@@ -1149,6 +1157,64 @@ def download(identifier):
                      download_name=Path(job['name']).stem+f'_ClearPage-{VERSION}.pdf', mimetype='application/pdf')
 
 
+def compression_worker(job, source, previous_state):
+    def progress(value):
+        with LOCK:
+            job['compression']['progress'] = value
+    try:
+        result = pdf_compression.compress_pdf(source, job['dir']/'compressed.pdf',
+                                             lambda: job['cancel'], progress)
+        with LOCK:
+            job['compression'].update(status='ready', progress=100, **result)
+    except InterruptedError:
+        with LOCK:
+            job['compression'].update(status='cancelled', message='Compression stopped. You can try again.')
+    except ValueError as error:
+        with LOCK:
+            job['compression'].update(status='error', message=str(error))
+    except Exception:
+        with LOCK:
+            job['compression'].update(status='error', message='Could not compress this PDF. Check available disk space and try again.')
+    finally:
+        with LOCK:
+            job['state'] = previous_state
+
+
+@app.post('/api/compress/<identifier>')
+def compress_document(identifier):
+    with LOCK:
+        job = job_for(identifier)
+        if job['state'] not in ('ready', 'review', 'done', 'cancelled', 'error'):
+            raise ValueError('Wait for the current operation to finish before compressing.')
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict) or data.get('source', 'original') not in ('original', 'cleaned'):
+            raise ValueError('Choose the original PDF or a completed cleanup export.')
+        source_kind = data.get('source', 'original')
+        source = job['source'] if source_kind == 'original' else job['dir']/'cleaned.pdf'
+        if source_kind == 'cleaned' and (job['state'] != 'done' or not source.is_file()):
+            raise ValueError('Download your reviewed cleanup PDF first, then compress it.')
+        previous_state = job['state']
+        job.update(state='exporting', cancel=False,
+                   compression=dict(status='processing', progress=0, source=source_kind))
+        threading.Thread(target=compression_worker, args=(job, source, previous_state), daemon=True).start()
+        return jsonify(job['compression'])
+
+
+@app.get('/api/compress/<identifier>')
+def compression_status(identifier):
+    return jsonify(job_for(identifier).get('compression', dict(status='idle')))
+
+
+@app.get('/api/compressed-download/<identifier>')
+def compressed_download(identifier):
+    job = job_for(identifier)
+    if job.get('compression', {}).get('status') != 'ready':
+        raise ValueError('Compress the PDF before downloading it.')
+    return send_file(job['dir']/'compressed.pdf', as_attachment=True,
+                     download_name=Path(job['name']).stem+'_ClearPage-compressed.pdf',
+                     mimetype='application/pdf')
+
+
 @app.post('/api/compare/<identifier>/<int:index>')
 def compare_reference(identifier, index):
     with LOCK:
@@ -1163,7 +1229,7 @@ def compare_reference(identifier, index):
                 while chunk := request.stream.read(1024*1024):
                     total += len(chunk)
                     if total > app.config['MAX_CONTENT_LENGTH']:
-                        raise ValueError('Maximum file size is 150 MB.')
+                        raise ValueError('Maximum file size is 200 MB.')
                     output.write(chunk)
             quality_check.validate_reference(job['source'], target)
             report = quality_check.compare(Image.open(original(job,index)),
@@ -1244,7 +1310,7 @@ def import_reviewed(identifier):
                 while chunk := request.stream.read(1024*1024):
                     total += len(chunk)
                     if total > app.config['MAX_CONTENT_LENGTH']:
-                        raise ValueError('Maximum file size is 150 MB.')
+                        raise ValueError('Maximum file size is 200 MB.')
                     output.write(chunk)
         except Exception:
             target.unlink(missing_ok=True)

@@ -1,6 +1,7 @@
 """Suggestions exercise real upload/detectors without changing cleanup settings."""
 from io import BytesIO
 from pathlib import Path
+import re
 import unittest
 from unittest.mock import patch
 from PIL import Image
@@ -95,6 +96,25 @@ class SuggestionTests(unittest.TestCase):
                      'dotted-document.webp','dotted-map.webp','nassau.svg'):
             with self.client.get('/static/type-'+name) as response:
                 self.assertEqual(response.status_code,200,name)
+
+    def test_frontend_exposes_every_cleanup_preset(self):
+        source = (app.BASE/'frontend/src/App.jsx').read_text(encoding='utf-8')
+        catalogue = source.split('const presets = [', 1)[1].split('\n];', 1)[0]
+        entries = re.findall(r"id: '([^']+)'.*?image: '([^']+)'", catalogue)
+        methods = [method for method, image in entries]
+        supported = {'preset', 'overlay', 'polarity', 'gemini_draft'}
+        for module in (app.scan_patterns, app.dotted_scans, app.screened_scans,
+                       app.kane_outline, app.licensed_diagonal, app.hocking_outline, app.union_parish, app.henry_red, app.lake_outline, app.preble_scans, app.nassau_scans):
+            supported.update(module.METHODS)
+        self.assertEqual(set(methods), supported)
+        self.assertEqual(len(methods), len(supported), 'Duplicate cleanup choice')
+        for method, image in entries:
+            if method != 'gemini_draft':
+                self.assertEqual(app.settings({'method': method})['method'], method)
+            names = list((app.BASE/'static').glob('type-'+image+'.*'))
+            self.assertEqual(len(names), 1, method)
+            with self.client.get('/static/'+names[0].name) as response:
+                self.assertEqual(response.status_code, 200, method)
 
 
 if __name__=='__main__': unittest.main()

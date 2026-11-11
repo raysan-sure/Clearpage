@@ -58,7 +58,7 @@ class ReleaseVersionTests(unittest.TestCase):
             target = packages/name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(b'build-machine-path' if name.endswith(('.pyc', '.pyo')) else b'Original license')
-        names = ['pypdfium2', 'opencv-python-headless', 'numpy', 'pillow', 'cryptography', 'flask']
+        names = ['pypdfium2', 'pikepdf', 'lxml', 'opencv-python-headless', 'numpy', 'pillow', 'cryptography', 'flask']
         if release.sys.platform == 'win32':
             names += ['pywebview', 'pythonnet', 'clr-loader']
         distributions = [SimpleNamespace(metadata={'Name': name}, version='1', files=paths,

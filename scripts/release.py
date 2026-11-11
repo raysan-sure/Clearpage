@@ -55,7 +55,7 @@ def collect_licenses(bundle, standard=False):
         if source.suffix.lower() in ('.txt', '.md'):
             shutil.copy2(source, target/source.name)
     installed = []
-    required = {'pypdfium2', 'opencv-python-headless', 'numpy', 'pillow', 'cryptography', 'flask'}
+    required = {'pypdfium2', 'pikepdf', 'lxml', 'opencv-python-headless', 'numpy', 'pillow', 'cryptography', 'flask'}
     if not standard:
         required.update(('torch', 'onnxruntime'))
     if sys.platform == 'win32':

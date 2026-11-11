@@ -104,7 +104,7 @@ async function upload(file){
  if(working||!file)return;
  $('uploadStatus').textContent='';
  if(!/\.pdf$/i.test(file.name)){ $('uploadStatus').textContent='Please choose a PDF file.';return; }
- if(file.size>150*1024*1024){$('uploadStatus').textContent='Please choose a PDF under 150 MB.';return;}
+ if(file.size>200*1024*1024){$('uploadStatus').textContent='Please choose a PDF under 200 MB.';return;}
  setWorking(true);$('uploadStatus').textContent='Opening your PDF…';
  try{
   const previous=documentJob;

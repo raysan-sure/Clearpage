@@ -2,7 +2,7 @@
 from pathlib import Path
 import os
 import hashlib
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, collect_delvewheel_libs_directory
 
 root = Path(SPECPATH)
 # Opt-in commercial builds include public payment instructions and a public key only.
@@ -21,10 +21,16 @@ if billing_path.exists() and not payment_ready(configuration(billing_path)) and 
     raise ValueError('Complete billing.json before distributing a paid build. See BILLING.md.')
 datas = [(str(root/'assets/repeated-copy.png'), 'assets'), (str(root/'static'), 'static'), (str(root/'assets/clearpage.ico'), 'assets'), (str(root/'assets/huntington.npy'), 'assets'),
          (str(root/'assets/nassau-border.npy'), 'assets'),
+         (str(root/'assets/nassau-layout.png'), 'assets'),
          (str(root/'assets/preble-unofficial.npz'), 'assets'),
+         (str(root/'assets/preble-resampled.npz'), 'assets'),
+         (str(root/'assets/lake-outline.npz'), 'assets'),
          (str(root/'assets/cumberland-red.npz'), 'assets'),
          (str(root/'assets/screened-unofficial.npz'), 'assets'),
          (str(root/'assets/kane-outline.npz'), 'assets'),
+         (str(root/'assets/licensed-diagonal.npz'), 'assets'),
+         (str(root/'assets/hocking-outline.png'), 'assets'),
+         (str(root/'assets/hocking-layouts.json'), 'assets'),
          (str(root/'assets/search-package-dot-probes.npz'), 'assets'),
          (str(root/'assets/tammany-unofficial-probes.npz'), 'assets'),
          (str(root/'assets/unofficial-copy-1994.npz'), 'assets'),
@@ -55,11 +61,12 @@ version_path = policy_dir/'version-info.txt'
 version_resource(version_path, owner_test)
 if billing_path.exists():
     datas.append((str(billing_path), '.'))
-for package in ('pypdfium2', 'pypdfium2_raw'):
+for package in ('pypdfium2', 'pypdfium2_raw', 'pikepdf'):
     data, binary, imports = collect_all(package)
     datas += data
     binaries += binary
     hiddenimports += imports
+datas, binaries = collect_delvewheel_libs_directory('pikepdf', datas=datas, binaries=binaries)
 
 a = Analysis([str(root/'app.py')], pathex=[str(root)], binaries=binaries,
              runtime_hooks=[str(policy_hook)],

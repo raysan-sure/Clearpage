@@ -33,7 +33,7 @@ function options() { return {method:$('method').value,mode:$('mode').value,strok
 function invalidate() { clearQuality(); if(!job)return; sessionStorage.removeItem('keep-'+job.id); revision++; previewed.clear(); results=[]; keep.clear(); $('review').hidden=true; $('keepLabel').hidden=true; $('download').hidden=true; $('export').hidden=false; $('previewState').textContent='SETTINGS CHANGED'; $('pageResult').textContent='Preview again to see these settings.'; loadPage(); }
 async function upload(file) {
  if(!file||busy)return;
- if(file.size>150*1024*1024) return notice('Maximum file size is 150 MB.',true);
+ if(file.size>200*1024*1024) return notice('Maximum file size is 200 MB.',true);
  if(!/\.(pdf|jpe?g|png|tiff?)$/i.test(file.name))return notice('Choose a PDF, JPG, PNG or TIFF scan.',true);
  setBusy(true); $('dropzone').querySelector('strong').textContent='Opening your file…';
  try {
@@ -131,7 +131,7 @@ $('useReviewed').onchange=invalidate;
 $('importReviewed').onclick=()=>$('reviewedFile').click();
 $('reviewedFile').onchange=async()=>{
  const file=$('reviewedFile').files[0];if(!file||!job||busy)return;
- if(file.size>150*1024*1024){notice('Maximum file size is 150 MB.',true);return;}
+ if(file.size>200*1024*1024){notice('Maximum file size is 200 MB.',true);return;}
  setBusy(true);$('progressBox').hidden=false;$('statusText').textContent='Opening the reviewed copy…';
  try{await api('/api/reviewed/'+job.id,file,true);results=[];keep=new Set();previewed.clear();sessionStorage.removeItem('keep-'+job.id);$('review').hidden=true;$('keepLabel').hidden=true;$('cancel').hidden=false;poll();}catch(error){notice(error.message,true);setBusy(false);}finally{$('reviewedFile').value='';}
 };
@@ -227,7 +227,7 @@ function clearQuality(){qualityReport=null;$('qualityResult').textContent='';$('
 $('compareReference').onclick=()=>$('referenceFile').click();
 $('referenceFile').onchange=async()=>{
  const file=$('referenceFile').files[0];if(!file||!job||busy)return;
- if(file.size>150*1024*1024){notice('Maximum file size is 150 MB.',true);return;}
+ if(file.size>200*1024*1024){notice('Maximum file size is 200 MB.',true);return;}
  clearQuality();setBusy(true);
  try{
   qualityReport=await api(`/api/compare/${job.id}/${page}`,file,true);

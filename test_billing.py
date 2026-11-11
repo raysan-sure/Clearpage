@@ -207,10 +207,12 @@ class BillingApiTests(BillingTests):
         source = directory / 'original.pdf'
         source.write_bytes(self.pdf('unpaid'))
         app.JOBS['unpaid'] = dict(id='unpaid', dir=directory, source=source, state='review')
-        for url in ('/api/download/unpaid', '/api/page/unpaid/0/after', '/api/queue/download'):
+        for url in ('/api/download/unpaid', '/api/page/unpaid/0/after', '/api/queue/download',
+                    '/api/compress/unpaid', '/api/compressed-download/unpaid'):
             self.assertEqual(self.client.get(url).status_code, 402, url)
         for url, data in (('/api/export/unpaid', {'keep': [0]}),
-                          ('/api/queue', {'ids': ['unpaid'], 'export': True})):
+                          ('/api/queue', {'ids': ['unpaid'], 'export': True}),
+                          ('/api/compress/unpaid', {'source': 'original'})):
             self.assertEqual(self.client.post(url, json=data, headers=self.headers).status_code, 402, url)
 
     def test_accepted_document_export_still_works_without_remaining_credits(self):
@@ -230,6 +232,22 @@ class BillingApiTests(BillingTests):
         self.assertTrue(response.data.startswith(b'%PDF'))
         response.close()
         self.assertEqual(self.store.status()['credits'], 0)
+
+    def test_compression_reuses_paid_document_without_another_credit(self):
+        self.store.activate(self.token())
+        identifier = self.upload(self.pdf('paid compression')).json['id']
+        self.upload(self.pdf('second paid document'))
+        job = app.JOBS[identifier]
+        for _ in range(2):
+            response = self.client.post('/api/compress/'+identifier, json={}, headers=self.headers)
+            self.assertEqual(response.status_code, 200, response.json)
+            deadline = time.monotonic()+10
+            while job['state'] == 'exporting' and time.monotonic() < deadline:
+                time.sleep(.02)
+            self.assertEqual(job['compression']['status'], 'ready', job['compression'])
+            with self.client.get('/api/compressed-download/'+identifier) as download:
+                self.assertEqual(download.status_code, 200)
+            self.assertEqual(self.store.status()['credits'], 0)
 
     def test_activation_requires_local_request_and_cannot_confirm_payment(self):
         for path in ('/api/billing/razorpay/order', '/api/billing/razorpay/check'):

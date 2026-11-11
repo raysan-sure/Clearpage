@@ -49,6 +49,20 @@ do not change the PDF or select a cleanup automatically. **All cleanup types**
 keeps every preset available and opens when no clear match is found. Sampled
 pages may not represent the entire file; review other page types before export.
 
+## Lossless PDF compression
+
+After uploading a PDF, choose **Compress PDF** in the top bar. Compression targets
+**25,000,000 bytes (25 MB)** while preserving image samples, resolution, text and
+page content. The tool uses local pikepdf/qpdf stream and object optimization.
+It keeps the smaller of the optimized file and the original bytes and reports
+whether the target was reached. Already compressed scans may remain above 25 MB.
+The tool never lowers image quality to force the target.
+
+Choose the original upload or a completed cleanup PDF. To compress reviewed cleanup,
+download the reviewed PDF first, then choose **Completed cleanup PDF**. Compression
+uses the uploaded document's existing authorization and does not spend another credit.
+Digital signatures and encrypted PDFs require an unsigned, unlocked copy.
+
 ## Light-gray marks on black ink scans
 
 For large diagonal gray **Unofficial Copy** lettering, use **Unofficial copy**.
@@ -254,18 +268,20 @@ ink remains ambiguous, so this is not a guarantee of pixel-perfect text recovery
 
 Select **Nassau · Unofficial Copy** for pale diagonal outline lettering inside a
 repeating square border, then preview, clean, compare and select pages to export.
-Both border repetition and diagonal pale ink must match before a page is changed.
+For the known Nassau layout, the preset compares the printed letters and frame
+with nearby paper, including on small scans and densely printed pages. Other
+layouts still require both border repetition and a diagonal band of pale ink.
+Matched pages start selected for export and can be compared or deselected.
 Blank, unmatched and unsupported pages stay original, including pages mixed into
 the same search package. Only simple, unrotated, full-page RGB portrait scans are
 supported. Native image resolution, page geometry and all pages are preserved.
 
 This preset lightens neutral pale pixels in the detected diagonal region and
-border while retaining dark ink and its immediate edges. Faint gray document
+border while retaining dark ink. Faint gray document
 content inside those regions can also be affected: review light text, signatures,
 numbers and intersections before selecting the result. No OCR, invented text or
-AI reconstruction is used. The example is synthetic; the detector template
-contains only an isolated geometric watermark tile. Customer documents, document
-text and personal file paths are not bundled.
+AI reconstruction is used. The example is synthetic. The detector templates
+contain only the watermark design and an isolated geometric tile.
 
 ## Gray watermark cleanup
 
@@ -348,7 +364,7 @@ unchanged. This does not add generic removal of all diagonal or repeated text.
 
 ## New in 2.0
 
-- **File queue:** open up to 20 PDFs/scans (150 MB per input, 500 MB total).
+- **File queue:** open up to 20 PDFs/scans (200 MB per input, 500 MB total).
   Each file retains its own cleanup settings. Clean waiting files sequentially;
   stop the queue without changing the original input files.
 - **Review before ZIP:** compare each changed page, choose whether to keep its
@@ -403,7 +419,7 @@ word-repair patches cannot be reused with different color settings: keep the
 previous setting, or save your work and reopen the original before changing it.
 This avoids silently discarding or incorrectly recoloring accepted repairs.
 
-Image imports allow up to 150 MB, 300 TIFF pages, 12 million decoded pixels per
+Image imports allow up to 200 MB, 300 TIFF pages, 12 million decoded pixels per
 page, and 120 million pixels per image file. A low DPI value that would exceed
 the existing PDF render limits is rejected. Animated PNGs and other image
 formats are not supported. A damaged or oversized import leaves no partial job.
@@ -572,7 +588,7 @@ This is **visual cleanup, not secure redaction**. It adds visible corrections wh
 ## Supported input
 
 - Windows x64 build; browser interface tested locally.
-- Unlocked PDFs, up to 150 MB and 300 pages, with each rendered page up to 12 million pixels.
+- Unlocked PDFs, up to 200 MB and 300 pages, with each rendered page up to 12 million pixels.
 - Raster scans are the intended input. Website mode also removes the specifically recognized text/vector overlays described above; arbitrary native PDF overlays are not supported.
 - Interactive forms are rejected. Do not use it to preserve or validate digital signatures. Any PDF edit can invalidate a signature.
 - Pages with rotation and crop boxes are supported. Source page size, crop, rotation, order, and count are preserved.
@@ -698,3 +714,32 @@ overlay commands; original scan bytes, page geometry, and unselected pages
 remain unchanged. This variant does not reconstruct letters or use AI.
 Flattened or differently encoded marks require a different supported method.
 Synthetic positive and negative cases are in `test_unofficial_overlay.py`.
+
+## Diagonal licensing text on tiled scans
+
+Choose **Diagonal licensing text** for the supported line beginning “LICENSED
+TO FIRST AMERICAN DATA TREE LLC”. Upload suggestions use the same detector as
+preview and processing. This variant supports the verified 2560-pixel-wide,
+3312- or 4208-pixel-tall bilevel scans stored as five or six grayscale bands.
+It checks the PDF placement commands and the watermark's native pixel position;
+unknown layouts, shifted marks, grayscale scans, and unmatched pages stay original.
+
+Preview, processing, and export share `licensed_diagonal.py`. Only the 39,629
+profile pixels are interpolated; every other native pixel, page dimension, and
+placement command is unchanged. No OCR or AI rewrites words. Intersections with
+text and signatures are estimates, so review and select cleaned pages before
+exporting. Unselected pages stay original. The packaged profile contains only
+watermark geometry and image-placement instructions, not customer document text.
+Regression coverage is in `test_licensed_diagonal.py`.
+
+## Hocking County outline
+
+Choose **Hocking County outline** when a scanned page has the diagonal outlined
+line “HOCKING COUNTY RECORDER THIS IS AN UNOFFICIAL COPY.” ClearPage suggests
+it after sampling the upload, then checks every page separately during cleanup.
+Unmatched pages and pages excluded at export keep their original scans.
+
+The preset works locally on supported grayscale scans stored as RGB images;
+it does not require AI or OCR. It compares the shape and tone of the outline
+before removing it. Review intersections with words, signatures and seals: an
+ambiguous fragment may remain to preserve the underlying ink.

@@ -7,6 +7,8 @@ from pathlib import Path
 import json
 import cv2
 import numpy as np
+import native_scan_profile
+import preble_resampled
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject
 from pdf_overlays import read_pdf
@@ -14,7 +16,7 @@ from dotted_scans import replace_image, image_filter
 
 METHODS = ('preble_unofficial',)
 MAX_PIXELS = 15_000_000
-CACHE = 'preble-v4'
+CACHE = 'preble-v5'
 
 
 def scan_object(page):
@@ -117,6 +119,8 @@ def prepare(source, index, directory, assets, cancelled=lambda: False):
         return target, json.loads(metadata.read_text())
     page = read_pdf(source).pages[index]
     found = scan_object(page)
+    if found is None:
+        return native_scan_profile.prepare(source, index, directory, CACHE, preble_resampled.process, cancelled)
     details = dict(native_preble=True, changed=0, matched=False, confidence=None,
                    protected=0, reviewed=False, uncertain=False,
                    note='Unsupported Preble County scan structure. Original retained.')
@@ -145,20 +149,4 @@ def prepare(source, index, directory, assets, cancelled=lambda: False):
 
 
 def write_clean(source, target, keep, directory, cancelled=lambda: False):
-    writer = PdfWriter(); writer.clone_document_from_reader(read_pdf(source))
-    for index in keep:
-        if cancelled(): raise InterruptedError('Cancelled')
-        path = Path(directory)/f'{index}-{CACHE}.pdf'
-        details = json.loads(path.with_suffix('.json').read_text())
-        if not details['changed']: continue
-        found = scan_object(read_pdf(path).pages[0])
-        if found is None: raise ValueError('Invalid Preble scan cache. Process again.')
-        name, obj = found
-        replace_image(writer, writer.pages[index], name, obj.clone(writer))
-    temporary = Path(target).with_suffix('.part')
-    try:
-        with temporary.open('wb') as output: writer.write(output)
-        if cancelled(): raise InterruptedError('Cancelled')
-        temporary.replace(target)
-    finally:
-        temporary.unlink(missing_ok=True)
+    native_scan_profile.export_cached(source, target, keep, directory, CACHE, cancelled)

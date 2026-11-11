@@ -314,7 +314,11 @@
 .document-viewer, .cleanup-panel { position: sticky; top: 24px; height: calc(100dvh - 48px); min-height: 420px; }
 .document-viewer { display: flex; flex-direction: column; }
 .viewer-toolbar, .page-navigation { flex-shrink: 0; }
-.cleanup-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.cleanup-panel { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.cleanup-type-picker { display: grid; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #e6e4e3; }
+.cleanup-type-picker label, .preset-fieldset legend { font-size: 12px; font-weight: 600; }
+.cleanup-type-picker select { width: 100%; min-width: 0; padding: 10px 8px; border: 1px solid #d8cdc7; border-radius: 8px; background: white; font: inherit; font-size: 12px; }
+.cleanup-type-picker .text-button { justify-self: start; }
 .cleanup-options { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 @media (max-width: 800px) { .cleanup-options { max-height: 520px; } }
 .cleanup-panel .panel-actions { display: flex; }
@@ -642,3 +646,19 @@
 .suggestion-card small, .suggestion-note { color: #52645b; }
 .suggestion-card .button { margin-top: 6px; width: 100%; }
 .all-cleanup-types > summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 12px 0; }
+.upload-tool-note { margin-bottom: 18px; color: #726b64; font-size: 13px; }
+.compression-dialog { position: fixed; inset: 0; margin: auto; width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 0; border: 1px solid #e6e4e3; border-radius: 18px; background: white; color: #403c39; }
+.compression-dialog::backdrop { background: #302b2a66; backdrop-filter: blur(5px); }
+.compression-content { position: relative; padding: 32px; }
+.compression-content h2 { margin: 12px 0; font-size: 27px; font-weight: 600; }
+.compression-content p { margin: 12px 0; font-size: 13px; line-height: 1.6; }
+.compression-content label { display: block; margin-top: 20px; font-size: 13px; font-weight: 600; }
+.compression-content select { width: 100%; margin-top: 8px; padding: 12px; border: 1px solid #d8cdc7; border-radius: 8px; font-size: 13px; }
+.compression-local { color: #726b64; }
+.compression-error { color: #b42318; }
+.compression-content progress { width: 100%; accent-color: #d92d20; }
+.compression-content [role=status] > p:first-child { display: flex; align-items: center; gap: 8px; }
+.compression-result { margin-top: 20px; padding: 18px; border: 1px solid #d8e4df; border-radius: 12px; background: #f6faf8; }
+.compression-result dl { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; font-size: 13px; }
+.compression-result dd { text-align: right; font-weight: 600; }
+.compression-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }

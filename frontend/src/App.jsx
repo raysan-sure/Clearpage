@@ -9,24 +9,31 @@ import BillingDialog from './BillingDialog';
 import AdminDialog from './AdminDialog';
 import GeminiTrial from './GeminiTrial';
 import CleanupSuggestions from './CleanupSuggestions';
+import CompressionDialog from './CompressionDialog';
 
 const presets = [
+  { id: 'lake_outline', title: 'Lake County · hollow UNOFFICIAL COPY', description: 'Choose this when thin outlines spell UNOFFICIAL COPY from the upper left to the lower right. Preview where a letter crosses handwriting.', image: 'lake-outline', tag: 'County scans' },
+  { id: 'henry_red', title: 'Henry County · red diagonal stamp', description: 'Use for Henry County scans with a red “NOT AN OFFICIAL COPY” stamp running from bottom left to top right. Include at least two different stamped pages in the same PDF.', image: 'henry-red', tag: 'County scans' },
+  { id: 'union_parish', title: 'Union Parish · purple UNOFFICIAL', description: 'Choose this when purple UNOFFICIAL lettering appears at the top, middle, and bottom of the page. It also cleans the small repeated gray codes.', image: 'union-parish', tag: 'Parish scans' },
+  { id: 'hocking_outline', title: 'Hocking County outline', description: 'Choose this when a diagonal line reads “HOCKING COUNTY RECORDER THIS IS AN UNOFFICIAL COPY”. Preview where it crosses words or signatures.', image: 'hocking-outline', tag: 'County scans' },
+  { id: 'licensed_diagonal', title: 'Diagonal licensing text', description: 'One diagonal line beginning “LICENSED TO FIRST AMERICAN DATA TREE LLC”. For matching search-package scans. Review words and signatures where the line crosses them.', image: 'licensed-diagonal', tag: 'Search packages' },
   { id: 'kane_outline', title: 'Kane County · dotted outline', description: 'One large diagonal “Unofficial” word drawn with a dotted outline, as in Kane County scans. Review tiny crossings with text and signatures.', image: 'kane-outline', tag: 'County scans' },
   { id: 'screened_unofficial', title: 'Dotted Un-Official', description: 'One diagonal dotted “Un-Official” mark across a scan. Removes the pattern and repairs damaged strokes. Review text and signatures.', image: 'screened-unofficial', tag: 'Scanned documents' },
   { id: 'repeated_copy', title: 'Small repeated copy', description: 'Small gray copy words repeated across the scan. Review dark areas after cleanup.', image: 'repeated-copy', tag: 'Scans' },
-  { id: 'flat_gray_copy', title: 'Gray watermark · black ink scans', description: 'Use for the diagonal St. Tammany “UNOFFICIAL” stamp or repeated Gallia County “Unofficial Copy” marks. Keeps original black pixels.', image: 'flat-gray', tag: 'Black ink scans' },
+  { id: 'flat_gray_copy', title: 'St. Tammany / Gallia · gray watermark', description: 'Use for the diagonal St. Tammany “UNOFFICIAL” stamp or repeated Gallia County “Unofficial Copy” marks. Keeps original black pixels.', image: 'flat-gray', tag: 'Black ink scans' },
   { id: 'cumberland_red', title: 'Cumberland red watermark', description: 'Refines faint traces from the pale red diagonal Cumberland stamp while protecting dark ink.', image: 'red-copy', tag: 'County scans' },
   { id: 'red_copy', title: 'Red “Not an Official Copy”', description: 'Pale red diagonal lettering on black-and-white scans. No AI needed.', image: 'red-copy', tag: 'Red marks' },
   { id: 'gemini_draft', title: 'Gemini AI draft · cloud', description: 'Try one difficult page with your Gemini key. Requires review.', image: 'repeated-diagonal', tag: 'Optional cloud' },
-  { id: 'dotted_document', title: 'Dotted document', description: 'Diagonal dotted lettering on scanned documents.', image: 'dotted-document', tag: 'Documents' },
+  { id: 'dotted_document', title: 'Dotted document / search package', description: 'Diagonal dotted lettering on scanned documents, including supported grayscale search packages.', image: 'dotted-document', tag: 'Documents' },
   { id: 'dotted_map', title: 'Maps & surveys', description: 'Dotted lettering across plats and survey maps.', image: 'dotted-map', tag: 'Maps' },
   { id: 'unofficial_copy', title: 'Unofficial copy', description: 'Gray “Unofficial Copy” marks. Adjusts to each supported page’s size and angle.', image: 'unofficial-copy', tag: 'Scans' },
   { id: 'nassau_unofficial', title: 'Nassau · Unofficial Copy', description: 'Pale diagonal lettering with a repeated square border. Review faint text, signatures and intersections after cleanup.', image: 'nassau', tag: 'County scans' },
-  { id: 'preble_unofficial', title: 'Preble County · Unofficial Copy', description: 'Fine-line “Unofficial Copy” marks on Preble County search packages. Review fine text where the mark crosses it.', image: 'preble', tag: 'County scans' },
-  { id: 'overlay', title: 'Text & website marks', description: 'Separate PDF stamps, including gray diagonal “Un-Official” on search packages and maps. Keeps the original scan unchanged.', image: 'overlay', tag: 'PDF overlays' },
+  { id: 'preble_unofficial', title: 'Preble County · Unofficial Copy', description: 'Choose this for gray UNOFFICIAL COPY lettering that rises from left to right on a Preble County scan. It may look dotted when you zoom in.', image: 'preble', tag: 'County scans' },
+  { id: 'overlay', title: 'Text & website marks', description: 'Choose this for a separate PDF stamp, such as large gray UNOFFICIAL letters over a scanned recorder page. Also supports Un-Official on maps.', image: 'overlay', tag: 'PDF overlays' },
   { id: 'preset', title: 'Huntington County', description: 'The county watermark across scanned text.', image: 'huntington', tag: 'County scans' },
   { id: 'huntington_background', title: 'Huntington - step by step', description: 'Refine cleanup, then repair confirmed words.', image: 'huntington', tag: 'Text review' },
   { id: 'repeated_document', title: 'Repeated diagonal', description: 'Clean margins and text gaps. Overlapping ink stays protected.', image: 'repeated-diagonal', tag: 'Scans' },
+  { id: 'repeated_diagonal', title: 'Repeated diagonal · margins only', description: 'Clean supported repeated lettering outside the document content area. Lettering within that area stays visible.', image: 'repeated-diagonal', tag: 'Scans' },
   { id: 'repeated_diagonal_ai', title: 'Repeated diagonal · local AI', description: 'Full cleanup, with supported original strokes restored afterward. Review the AI draft.', image: 'repeated-diagonal', tag: 'AI draft' },
   { id: 'polarity', title: 'Dark page to white', description: 'Turn negative scans into readable white pages.', image: 'polarity', tag: 'Restoration' },
 ];
@@ -68,7 +75,7 @@ function HelpDialog({ onClose }) {
   }}><button ref={closeRef} className="icon-button close-help" aria-label="Close guide" onClick={onClose}><X size={20} /></button>
     <span className="eyebrow">A LITTLE GUIDANCE</span><h2 id="help-title">From cluttered to clear.</h2>
     {[
-      ['Add your document', 'Choose one PDF, JPG, PNG or TIFF up to 150 MB. Standard presets run on your computer. The optional Gemini draft sends one page to Google with your confirmation. Scans are exported as a PDF.'],
+      ['Add your document', 'Choose one PDF, JPG, PNG or TIFF up to 200 MB. Standard presets run on your computer. The optional Gemini draft sends one page to Google with your confirmation. Scans are exported as a PDF.'],
       ['Choose a matching preset', 'Select the example closest to your watermark. Preview the first page before cleaning the full document.'],
       ['Review before you export', 'Compare original and cleaned pages. Selected pages use the cleaned result; unchecked pages keep the original. Every page stays in your PDF.'],
     ].map(([title, body], index) => <div className="help-step" key={title}><span>{index + 1}</span><div><h3>{title}</h3><p>{body}</p></div></div>)}
@@ -81,7 +88,7 @@ function PdfTypeDialog({ item, selected, onSelect, onClose }) {
   useEffect(() => { const previous = document.activeElement; dialogRef.current?.showModal(); return () => previous?.focus(); }, []);
   return <dialog ref={dialogRef} className="pdf-type-dialog" aria-labelledby="pdf-type-title" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }}><div className="pdf-type-dialog-content">
     <button autoFocus className="icon-button close-help" aria-label="Close PDF type" onClick={onClose}><X size={20} /></button>
-    <div className="pdf-type-example"><img src={`/static/type-${item.image}.${['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline'].includes(item.image) ? 'svg' : 'webp'}`} alt={`${item.title} example`} /></div>
+    <div className="pdf-type-example"><img src={`/static/type-${item.image}.${['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(item.image) ? 'svg' : 'webp'}`} alt={`${item.title} example`} /></div>
     <div className="pdf-type-details"><span className="eyebrow">{item.tag}</span><h2 id="pdf-type-title">{item.title}</h2><p>{item.description}</p><Button onClick={() => { onSelect(item.id); onClose(); }}>{selected ? <Check size={17} /> : <ArrowRight size={17} />}{selected ? 'Keep this PDF type' : 'Use this PDF type'}</Button></div>
   </div></dialog>;
 }
@@ -91,6 +98,7 @@ export default function App() {
   const [billing, setBilling] = useState(null);
   const [showBilling, setShowBilling] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showCompression, setShowCompression] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [dismissedUpdate, setDismissedUpdate] = useState('');
@@ -151,10 +159,10 @@ export default function App() {
   }, [billing?.admin]);
 
   useEffect(() => {
-    const handleKey = event => { if (event.key === 'Escape') { if (pdfType) return; else if (help) setHelp(false); else if (!busy && view !== 'upload') setView(view === 'review' ? 'workspace' : 'upload'); } };
+    const handleKey = event => { if (event.key === 'Escape') { if (pdfType || showCompression) return; else if (help) setHelp(false); else if (!busy && view !== 'upload') setView(view === 'review' ? 'workspace' : 'upload'); } };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [help, pdfType, busy, view]);
+  }, [help, pdfType, showCompression, busy, view]);
   useEffect(() => { titleRef.current?.focus({ preventScroll: true }); }, [view]);
   useEffect(() => {
     if (method !== 'repeated_diagonal_ai') return;
@@ -171,6 +179,9 @@ export default function App() {
     async function reconnect() {
       let current;
       try { current = await request('/api/session'); } catch { return; }
+      if (active && !uploadLock.current && current?.state === 'exporting' && current.compression?.status === 'processing') {
+        setJob(current); setView('workspace'); setShowCompression(true); return;
+      }
       if (!active || uploadLock.current || current?.state !== 'processing') return;
       setJob(current); setMethod(current.options?.method || 'dotted_document');
       setView('workspace'); begin(); updateCleanupProgress(current);
@@ -213,7 +224,7 @@ export default function App() {
     if (!file || busy || uploadLock.current) return;
     setError('');
     if (!/\.(pdf|jpe?g|png|tiff?)$/i.test(file.name)) { setError('Please choose a PDF, JPG, PNG or TIFF file.'); return; }
-    if (file.size > 150 * 1024 * 1024) { setError('Please choose a file under 150 MB.'); return; }
+    if (file.size > 200 * 1024 * 1024) { setError('Please choose a file under 200 MB.'); return; }
     uploadLock.current = true; begin(); setMessage('Opening your document…');
     try {
       const previous = job;
@@ -245,7 +256,7 @@ export default function App() {
   function finishCleanup(state) {
     const next = state.results || [];
     const cleaned = next.filter(item => item.changed);
-    const selectedPages = cleaned.filter(item => !item.uncertain || ((item.native_search_package || item.native_tammany || item.native_kane) && item.matched));
+    const selectedPages = cleaned.filter(item => !item.uncertain || ((item.native_search_package || item.native_tammany || item.native_kane || item.native_nassau) && item.matched));
     setReviewedAI(new Set()); setResults(next); setPreviewed(new Set(next.map(item => item.page))); setSelected(new Set(selectedPages.map(item => item.page))); setPage(0); setRevision(value => value + 1); setPreviewError(false);
     if (cleaned.length === 0) {
       setMessage('No supported watermarks found. Try another preset or export the original pages.');
@@ -314,6 +325,7 @@ export default function App() {
       <header className="navbar">
         <a className="brand-link" href="/" onClick={event => { event.preventDefault(); navigate('upload'); }} aria-label="ClearPage home"><Brand /></a>
         {view !== 'review' && <div className="stepper" aria-label="Cleanup progress">{steps.map((label, index) => <React.Fragment key={label}>{index > 0 && <span className={`step-line ${stage >= index ? 'complete' : ''}`} />}<span className={`step ${stage === index ? 'current' : stage > index ? 'done' : ''}`} aria-current={stage === index ? 'step' : undefined}><b>{stage > index ? <Check size={12} /> : `0${index + 1}`}</b><span>{label}</span></span></React.Fragment>)}</div>}
+        {job && view !== 'upload' && <Button variant="secondary" disabled={busy} onClick={() => setShowCompression(true)}>Compress PDF</Button>}
         <button type="button" className="button button-secondary update-trigger" disabled={checkingUpdate} onClick={() => checkUpdates(true)}>{checkingUpdate ? 'Checking updates…' : 'Check for updates'}</button>
       </header>
       <main className={view === 'review' ? 'main-content review-content' : view === 'workspace' ? 'main-content workspace-content' : 'main-content'}>
@@ -326,10 +338,11 @@ export default function App() {
 
         {view === 'upload' && <>
           {billing?.admin ? <div className="billing-upload-note admin-active" role="status"><strong>Admin access is active.</strong> Documents do not use paid credits during this verified session. <button className="text-button" disabled={busy} onClick={()=>setShowAdmin(true)}>Manage admin session</button></div> : billing?.enabled && <div className="billing-upload-note"><strong>₹999 for two documents.</strong> One credit per distinct PDF. Reopen and download the same file again at no extra charge. <button className="text-button" disabled={busy} onClick={() => setShowBilling(true)}>Buy / activate</button> {billing.payment_provider === 'razorpay' && <button className="text-button" disabled={busy} onClick={() => setShowAdmin(true)}>Admin login</button>}</div>}
+          <p className="upload-tool-note">Upload a PDF for watermark cleanup or lossless compression with a 25 MB target.</p>
           <div className="upload-layout"><section className="upload-card"><div className="card-topline"><span><Upload size={16} />ADD YOUR DOCUMENT</span><span className="file-type">.PDF</span></div>
             <button disabled={busy} className={`dropzone ${dragging ? 'dragging' : ''}`} onClick={() => fileRef.current?.click()} onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); if (event.dataTransfer.files.length > 1) setError('Please add one PDF at a time.'); else upload(event.dataTransfer.files[0]); }}>
               <span className="upload-art"><span className="upload-art-back" /><span className="upload-art-front"><FileText size={37} strokeWidth={1.1} /></span><span className="upload-art-plus"><Plus size={16} /></span></span>
-              <h2>{busy ? 'Opening your document…' : dragging ? 'Drop it here. We’ve got it.' : 'Good things start with a drop.'}</h2><p>Drag your PDF or scan here, or browse to upload</p><span className="button button-primary">{busy ? <LoaderCircle size={16} className="animate-spin" /> : <Plus size={17} />}Choose a file<ArrowRight size={16} /></span><small>PDF · JPG · PNG · TIFF <span>·</span> Up to 150 MB</small>
+              <h2>{busy ? 'Opening your document…' : dragging ? 'Drop it here. We’ve got it.' : 'Good things start with a drop.'}</h2><p>Drag your PDF or scan here, or browse to upload</p><span className="button button-primary">{busy ? <LoaderCircle size={16} className="animate-spin" /> : <Plus size={17} />}Choose a file<ArrowRight size={16} /></span><small>PDF · JPG · PNG · TIFF <span>·</span> Up to 200 MB</small>
             </button><div className="upload-card-footer"><LockKeyhole size={14} /><span>Your files stay yours. Your original stays untouched.</span></div>
           </section>
           </div>
@@ -349,10 +362,11 @@ export default function App() {
             {previewError && <div role="alert" className="status-banner error">Could not load the page preview.<button className="text-button" onClick={() => { setPreviewError(false); setRevision(value => value + 1); }}>Retry</button></div>}
             <div className="page-navigation"><button className="icon-button" aria-label="Previous page" disabled={busy || page === 0} onClick={() => { setPage(value => value - 1); setPreviewError(false); }}><ChevronLeft size={17} /></button><label>Page <select aria-label="Preview page" value={page} disabled={busy} onChange={event => { setPage(Number(event.target.value)); setPreviewError(false); }}>{Array.from({ length: job.count }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select> of {job.count}</label><button className="icon-button" aria-label="Next page" disabled={busy || page === job.count - 1} onClick={() => { setPage(value => value + 1); setPreviewError(false); }}><ChevronRight size={17} /></button></div>
           </section>
-          <aside className="cleanup-panel" aria-label="Cleanup settings"><div className="panel-title"><span className="feature-icon"><WandSparkles size={20} /></span><div><h2 id="pdf-type-heading">Choose your PDF type</h2><p>Select a card to see an example.</p></div></div>
+          <aside className="cleanup-panel" aria-label="Cleanup settings"><div className="panel-title"><span className="feature-icon"><WandSparkles size={20} /></span><div><h2 id="pdf-type-heading">Choose your PDF type</h2><p>{presets.length} cleanup types available.</p></div></div>
+            <div className="cleanup-type-picker"><label htmlFor="cleanup-type">All cleanup types ({presets.length})</label><select id="cleanup-type" value={method} disabled={busy} onChange={event => choosePreset(event.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><button type="button" className="text-button" disabled={busy} onClick={() => setPdfType(presets.find(item => item.id === method))}>View selected example<ArrowRight size={14} /></button></div>
             <div className="cleanup-options">
             <CleanupSuggestions state={suggestions} presets={presets} method={method} busy={busy} onChoose={choosePreset} />
-            <fieldset disabled={busy} className="preset-fieldset" aria-labelledby="pdf-type-heading"><div className="pdf-type-grid">{presets.map(item => <button type="button" key={item.id} className={'pdf-type-card ' + (method === item.id ? 'selected' : '')} aria-label={'View ' + item.title + ' PDF type'} aria-haspopup="dialog" onClick={() => setPdfType(item)}><span className="pdf-type-thumbnail"><img src={'/static/type-' + item.image + '.' + (['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline'].includes(item.image) ? 'svg' : 'webp')} alt="" />{method === item.id && <span className="pdf-type-check"><Check size={13} /></span>}</span><span className="pdf-type-card-title">{item.title}<ArrowRight size={14} /></span><span className="pdf-type-tag">{item.tag}</span><span className="sr-only">{method === item.id ? 'Selected' : ''}</span></button>)}</div></fieldset>
+            <fieldset disabled={busy} className="preset-fieldset" aria-labelledby="cleanup-examples-heading"><legend id="cleanup-examples-heading">All cleanup examples</legend><div className="pdf-type-grid">{presets.map(item => <button type="button" key={item.id} className={'pdf-type-card ' + (method === item.id ? 'selected' : '')} aria-label={'View ' + item.title + ' PDF type'} aria-haspopup="dialog" onClick={() => setPdfType(item)}><span className="pdf-type-thumbnail"><img src={'/static/type-' + item.image + '.' + (['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(item.image) ? 'svg' : 'webp')} alt="" />{method === item.id && <span className="pdf-type-check"><Check size={13} /></span>}</span><span className="pdf-type-card-title">{item.title}<ArrowRight size={14} /></span><span className="pdf-type-tag">{item.tag}</span><span className="sr-only">{method === item.id ? 'Selected' : ''}</span></button>)}</div></fieldset>
             {method === 'repeated_diagonal_ai' && <div className="note" role="status"><p>{localAI.message} Uses the earlier full cleanup coverage, then copies supported original strokes back into the result. Covered words, signatures and barcodes can still change; inspect every AI draft before export.</p></div>}
             </div>
             {method === 'gemini_draft' ? <GeminiTrial request={request} busy={busy} page={page} onTrial={geminiTrial} /> : <div className="panel-actions"><Button className="preview-action" onClick={preview} disabled={busy || (method === 'repeated_diagonal_ai' && !localAI.ready)}><ScanLine size={16} />Preview first page</Button>{results.length ? <Button className="review-action" onClick={() => navigate('review')} disabled={busy}><Check size={16} />Review pages<ArrowRight size={16} /></Button> : <Button className="clean-action" onClick={cleanAll} disabled={busy || (method === 'repeated_diagonal_ai' && !localAI.ready)}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <WandSparkles size={16} />}Clean all {job.count} {job.count === 1 ? 'page' : 'pages'}<ArrowRight size={16} /></Button>}<span className="panel-footnote"><ShieldCheck size={13} />Your original is always preserved.</span></div>}
@@ -372,6 +386,7 @@ export default function App() {
     {help && <HelpDialog onClose={() => setHelp(false)} />}
     {showBilling && <BillingDialog status={billing} request={request} onChange={setBilling} onClose={() => setShowBilling(false)} />}
     {showAdmin && <AdminDialog status={billing} request={request} onChange={setBilling} onClose={()=>setShowAdmin(false)} />}
+    {showCompression && job && <CompressionDialog job={job} request={request} onBusyChange={setBusy} onJobChange={updated => setJob(previous => ({ ...previous, ...updated }))} onClose={() => setShowCompression(false)} />}
     {cleanupProgress && <CleanupProgress filename={job.name} {...cleanupProgress} onStop={async () => { try { await request(`/api/cancel/${job.id}`, {}); } catch (failure) { setError(failure.message); throw failure; } }} onClose={() => {
       const complete = cleanupProgress.status === 'complete';
       setCleanupProgress(null);

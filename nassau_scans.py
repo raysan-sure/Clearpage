@@ -1,6 +1,6 @@
 """Native cleanup for pale diagonal lettering inside a repeating tiled border.
 
-The template contains an isolated geometric watermark tile, no document content.
+The templates contain only the repeating tile and the isolated watermark design.
 Only matched, simple portrait RGB scans qualify. No OCR or generated text.
 """
 from pathlib import Path
@@ -8,6 +8,7 @@ import json
 from functools import lru_cache
 import cv2
 import numpy as np
+from PIL import Image
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject
 from pdf_overlays import read_pdf
@@ -15,7 +16,48 @@ from dotted_scans import replace_image
 from gray_scans import scan_object
 
 METHODS = ('nassau_unofficial',)
-CACHE = 'native-nassau-v1'
+CACHE = 'native-nassau-v2'
+
+
+@lru_cache(maxsize=1)
+def layout_profile():
+    with Image.open(Path(__file__).resolve().parent/'assets/nassau-layout.png') as image:
+        depth = np.array(image)
+    # Compare the dark cores of the design with neighboring paper in four
+    # independent regions. Dense text may obscure an edge or half of the word.
+    core = depth >= 22
+    nearby = (cv2.dilate(core.astype('uint8'), np.ones((9, 9), 'uint8')) > 0) & (depth == 0)
+    y, x = np.indices(depth.shape)
+    center = (x >= 96) & (x <= 704) & (y > 94) & (y < 944)
+    regions = (x < 96, x > 704, center & (y < 500), center & (y >= 500))
+    probes = [(np.flatnonzero(core & r), np.flatnonzero(nearby & r)) for r in regions]
+    return depth, probes
+
+
+def clean_known_layout(a, gray):
+    depth, probes = layout_profile()
+    h, w = gray.shape
+    small = cv2.resize(gray, (depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA).ravel()
+    matches = []
+    for strokes, gaps in probes:
+        ink, paper = small[strokes], small[gaps]
+        ink, paper = ink[ink >= 160], paper[paper >= 160]
+        matches.append(len(ink) >= .2*len(strokes) and len(paper) >= .2*len(gaps)
+                       and np.mean(ink < 245) >= .75
+                       and np.mean(ink < 245) - np.mean(paper < 245) >= .4)
+    if sum(matches) < 3 or not any(matches[:2]) or not any(matches[2:]):
+        return None
+
+    # Allow for JPEG fringes and subpixel shifts between scan resolutions.
+    # Bound the correction by the measured depth of the nearby template.
+    envelope = cv2.dilate(depth, np.ones((5, 5), 'uint8'))
+    lift = cv2.resize(envelope, (w, h), interpolation=cv2.INTER_LINEAR)
+    eligible = (lift > 0) & (gray >= 175) & ((a.max(2) - gray) < 20)
+    # Fade the correction near dark strokes, where little paper is visible.
+    lift = np.where(eligible, (lift.astype('float32') + 4) * np.clip(
+        (gray.astype('float32') - 175) / 45, 0, 1), 0).round().astype('uint8')
+    result = cv2.add(a, cv2.merge((lift, lift, lift)))
+    return result, int(np.count_nonzero((lift > 0) & (gray < 255)))
 
 
 @lru_cache(maxsize=1)
@@ -68,9 +110,19 @@ def clean_pixels(a, cancelled=lambda: False):
     if a.ndim != 3 or a.shape[2] != 3:
         return a, details
     h, w = a.shape[:2]
-    if not 750 <= w <= 3000 or not 1.15 <= h/w <= 1.9 or h*w > 12_000_000:
+    if not 400 <= w <= 3000 or not 1.15 <= h/w <= 1.9 or h*w > 12_000_000:
         return a, details
     gray = a.min(2)
+    known = clean_known_layout(a, gray)
+    if known is not None:
+        if cancelled():
+            raise InterruptedError('Cancelled')
+        result, count = known
+        details.update(matched=True, changed=count, uncertain=True,
+            note='Matched the Nassau lettering and tile layout. Dark and colored ink retained. Review crossings with faint ink.')
+        return result, details
+    if w < 750:
+        return a, details
     matched, counts = border_match(gray)
     details['border_tiles'] = counts
     if not matched:

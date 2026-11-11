@@ -80,7 +80,7 @@ async function uploadFiles(list){
  setBusy(true);let first=null,errors=[];
  try{
   for(const file of incoming){
-   if(!/\.(pdf|jpe?g|png|tiff?)$/i.test(file.name)||file.size>150*1024*1024){errors.push(file.name+': choose a PDF or scan up to 150 MB');continue;}
+   if(!/\.(pdf|jpe?g|png|tiff?)$/i.test(file.name)||file.size>200*1024*1024){errors.push(file.name+': choose a PDF or scan up to 200 MB');continue;}
    $('dropzone').querySelector('strong').textContent='Opening '+file.name+'…';
    const response=await fetch('/api/upload',{method:'POST',headers:{'X-ClearPage':'local','X-Filename':encodeURIComponent(file.name)},body:file});
    const data=await response.json();if(!response.ok){errors.push(file.name+': '+data.error);continue;}

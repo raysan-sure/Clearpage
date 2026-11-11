@@ -48,6 +48,25 @@ def make_pdf(path, pixels, extra_text=False):
 
 
 class NassauTests(unittest.TestCase):
+    def test_small_dense_layout_requires_both_lettering_and_frame(self):
+        depth, _ = nassau.layout_profile()
+        small = cv2.resize(255-depth, (430, 561), interpolation=cv2.INTER_AREA)
+        scan = np.repeat(small[:, :, None], 3, axis=2)
+        scan[60:495:6, 20:398] = (30, 40, 80)
+        result, details = nassau.clean_pixels(scan)
+        self.assertTrue(details['matched'])
+        np.testing.assert_array_equal(result[60:495:6, 20:398], scan[60:495:6, 20:398])
+        light = (scan.min(2) > 210) & (scan.min(2) < 245)
+        self.assertGreater(np.mean(result.min(2)[light] >= 250), .95)
+        frame_only = scan.copy()
+        frame_only[53:529, 54:395] = 255
+        words_only = np.full_like(scan, 255)
+        words_only[53:529, 54:395] = scan[53:529, 54:395]
+        for partial in (frame_only, words_only):
+            unchanged, details = nassau.clean_pixels(partial)
+            self.assertFalse(details['matched'])
+            np.testing.assert_array_equal(unchanged, partial)
+
     def test_matching_scan_retains_dark_colored_and_outside_ink(self):
         a = fixture()
         result, info = nassau.clean_pixels(a)
