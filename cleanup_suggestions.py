@@ -13,10 +13,12 @@ import dotted_scans
 import screened_scans
 import kane_outline
 import licensed_diagonal
+import hocking_outline
 import search_package_dots
 import page_polarity
 
 REASONS = {
+    'hocking_outline': 'Matches the outlined Hocking County Recorder “unofficial copy” text.',
     'licensed_diagonal': 'Matches the diagonal “LICENSED TO FIRST AMERICAN DATA TREE LLC” stamp. Review crossings with words and signatures.',
     'kane_outline': 'Matches the Kane County diagonal dotted-outline “Unofficial” stamp. Review small intersections with text.',
     'screened_unofficial': 'Diagonal dotted “Un-Official” matches this scan. Removes the pattern and repairs damaged strokes; review the result.',
@@ -47,6 +49,9 @@ def suggest(source, count, overlays, image_for, assets):
             page = reader.pages[index]
             if overlays[index].get('overlays'):
                 add('overlay', index)
+            if hocking_outline.suggested(source, index):
+                add('hocking_outline', index)
+                continue
             licensed = licensed_diagonal.scan_objects(page)
             if licensed and licensed_diagonal.matches(licensed_diagonal.native_pixels(page, licensed)):
                 add('licensed_diagonal', index)

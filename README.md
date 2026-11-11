@@ -729,3 +729,15 @@ text and signatures are estimates, so review and select cleaned pages before
 exporting. Unselected pages stay original. The packaged profile contains only
 watermark geometry and image-placement instructions, not customer document text.
 Regression coverage is in `test_licensed_diagonal.py`.
+
+## Hocking County outline
+
+Choose **Hocking County outline** when a scanned page has the diagonal outlined
+line “HOCKING COUNTY RECORDER THIS IS AN UNOFFICIAL COPY.” ClearPage suggests
+it after sampling the upload, then checks every page separately during cleanup.
+Unmatched pages and pages excluded at export keep their original scans.
+
+The preset works locally on supported grayscale scans stored as RGB images;
+it does not require AI or OCR. It compares the shape and tone of the outline
+before removing it. Review intersections with words, signatures and seals: an
+ambiguous fragment may remain to preserve the underlying ink.
