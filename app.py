@@ -39,6 +39,7 @@ import licensed_diagonal
 import hocking_outline
 import union_parish
 import henry_red
+import lake_outline
 import preble_scans
 import nassau_scans
 import scan_patterns
@@ -56,7 +57,7 @@ ROOT = Path(tempfile.mkdtemp(prefix='ClearPage-'))
 PROFILE_ROOT = Path(os.environ.get('LOCALAPPDATA', str(Path.home())))/'ClearPage'/'reviewed-pages'
 LOCK = threading.RLock()
 JOBS = {}
-NATIVE_OUTLINE = {method: module for module in (screened_scans, kane_outline, licensed_diagonal, hocking_outline, union_parish, henry_red)
+NATIVE_OUTLINE = {method: module for module in (screened_scans, kane_outline, licensed_diagonal, hocking_outline, union_parish, henry_red, lake_outline)
                   for method in module.METHODS}
 SERVER = None
 HOST = None
@@ -195,7 +196,7 @@ def static(name):
     if name not in ('ui.js', 'ui.css', 'favicon.svg', 'app.js', 'style.css', 'repair.js', 'workspace.js', 'objects.js', 'sections.js', 'simple.css', 'simple.js',
                     'type-dotted-document.webp', 'type-dotted-map.webp', 'type-unofficial-copy.webp',
                     'type-overlay.webp', 'type-huntington.webp', 'type-repeated-diagonal.webp', 'type-polarity.svg',
-                    'type-preble.webp', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg', 'type-licensed-diagonal.svg', 'type-hocking-outline.svg', 'type-union-parish.webp', 'type-henry-red.webp'):
+                    'type-preble.webp', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg', 'type-licensed-diagonal.svg', 'type-hocking-outline.svg', 'type-union-parish.webp', 'type-henry-red.webp', 'type-lake-outline.webp'):
         return '', 404
     return send_file(BASE/'static'/name)
 

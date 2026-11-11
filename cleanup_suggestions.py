@@ -17,10 +17,14 @@ import licensed_diagonal
 import hocking_outline
 import union_parish
 import henry_red
+import lake_outline
+import preble_resampled
 import search_package_dots
 import page_polarity
 
 REASONS = {
+    'lake_outline': 'The hollow diagonal UNOFFICIAL COPY outline matches the Lake County scan.',
+    'preble_unofficial': 'The diagonal UNOFFICIAL COPY lettering has the Preble County print pattern.',
     'henry_red': 'The same red diagonal “NOT AN OFFICIAL COPY” stamp appears on multiple scanned pages.',
     'union_parish': 'Three pale purple UNOFFICIAL stamps match the Union Parish pattern.',
     'hocking_outline': 'Matches the outlined Hocking County Recorder “unofficial copy” text.',
@@ -54,6 +58,12 @@ def suggest(source, count, overlays, image_for, assets):
             page = reader.pages[index]
             if overlays[index].get('overlays'):
                 add('overlay', index)
+            if lake_outline.suggested(source, index):
+                add('lake_outline', index)
+                continue
+            if preble_resampled.suggested(source, index):
+                add('preble_unofficial', index)
+                continue
             if henry_red.suggested(source, index):
                 add('henry_red', index)
                 continue

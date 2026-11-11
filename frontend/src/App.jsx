@@ -12,6 +12,7 @@ import CleanupSuggestions from './CleanupSuggestions';
 import CompressionDialog from './CompressionDialog';
 
 const presets = [
+  { id: 'lake_outline', title: 'Lake County · hollow UNOFFICIAL COPY', description: 'Choose this when thin outlines spell UNOFFICIAL COPY from the upper left to the lower right. Preview where a letter crosses handwriting.', image: 'lake-outline', tag: 'County scans' },
   { id: 'henry_red', title: 'Henry County · red diagonal stamp', description: 'Use for Henry County scans with a red “NOT AN OFFICIAL COPY” stamp running from bottom left to top right. Include at least two different stamped pages in the same PDF.', image: 'henry-red', tag: 'County scans' },
   { id: 'union_parish', title: 'Union Parish · purple UNOFFICIAL', description: 'Choose this when purple UNOFFICIAL lettering appears at the top, middle, and bottom of the page. It also cleans the small repeated gray codes.', image: 'union-parish', tag: 'Parish scans' },
   { id: 'hocking_outline', title: 'Hocking County outline', description: 'Choose this when a diagonal line reads “HOCKING COUNTY RECORDER THIS IS AN UNOFFICIAL COPY”. Preview where it crosses words or signatures.', image: 'hocking-outline', tag: 'County scans' },
@@ -27,8 +28,8 @@ const presets = [
   { id: 'dotted_map', title: 'Maps & surveys', description: 'Dotted lettering across plats and survey maps.', image: 'dotted-map', tag: 'Maps' },
   { id: 'unofficial_copy', title: 'Unofficial copy', description: 'Gray “Unofficial Copy” marks. Adjusts to each supported page’s size and angle.', image: 'unofficial-copy', tag: 'Scans' },
   { id: 'nassau_unofficial', title: 'Nassau · Unofficial Copy', description: 'Pale diagonal lettering with a repeated square border. Review faint text, signatures and intersections after cleanup.', image: 'nassau', tag: 'County scans' },
-  { id: 'preble_unofficial', title: 'Preble County · Unofficial Copy', description: 'Fine-line “Unofficial Copy” marks on Preble County search packages. Review fine text where the mark crosses it.', image: 'preble', tag: 'County scans' },
-  { id: 'overlay', title: 'Text & website marks', description: 'Separate PDF stamps, including gray diagonal “Un-Official” on search packages and maps. Keeps the original scan unchanged.', image: 'overlay', tag: 'PDF overlays' },
+  { id: 'preble_unofficial', title: 'Preble County · Unofficial Copy', description: 'Choose this for gray UNOFFICIAL COPY lettering that rises from left to right on a Preble County scan. It may look dotted when you zoom in.', image: 'preble', tag: 'County scans' },
+  { id: 'overlay', title: 'Text & website marks', description: 'Choose this for a separate PDF stamp, such as large gray UNOFFICIAL letters over a scanned recorder page. Also supports Un-Official on maps.', image: 'overlay', tag: 'PDF overlays' },
   { id: 'preset', title: 'Huntington County', description: 'The county watermark across scanned text.', image: 'huntington', tag: 'County scans' },
   { id: 'huntington_background', title: 'Huntington - step by step', description: 'Refine cleanup, then repair confirmed words.', image: 'huntington', tag: 'Text review' },
   { id: 'repeated_document', title: 'Repeated diagonal', description: 'Clean margins and text gaps. Overlapping ink stays protected.', image: 'repeated-diagonal', tag: 'Scans' },
