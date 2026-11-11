@@ -2,7 +2,7 @@
 from pathlib import Path
 import hashlib
 import urllib.request
-from text_restore import MODEL_NAME, MODEL_SHA256
+from clearpage.restore.text_restore import MODEL_NAME, MODEL_SHA256
 
 if __name__ == '__main__':
     target=Path(__file__).resolve().parent/'models'/MODEL_NAME

@@ -256,7 +256,7 @@ export default function App() {
   function finishCleanup(state) {
     const next = state.results || [];
     const cleaned = next.filter(item => item.changed);
-    const selectedPages = cleaned.filter(item => !item.uncertain || ((item.native_search_package || item.native_tammany || item.native_kane) && item.matched));
+    const selectedPages = cleaned.filter(item => !item.uncertain || ((item.native_search_package || item.native_tammany || item.native_kane || item.native_nassau) && item.matched));
     setReviewedAI(new Set()); setResults(next); setPreviewed(new Set(next.map(item => item.page))); setSelected(new Set(selectedPages.map(item => item.page))); setPage(0); setRevision(value => value + 1); setPreviewError(false);
     if (cleaned.length === 0) {
       setMessage('No supported watermarks found. Try another preset or export the original pages.');
@@ -337,7 +337,7 @@ export default function App() {
         <input ref={fileRef} type="file" accept="application/pdf,.pdf" aria-label="Choose a PDF" className="sr-only" disabled={busy} onChange={event => upload(event.target.files?.[0])} />
 
         {view === 'upload' && <>
-          {billing?.admin ? <div className="billing-upload-note admin-active" role="status"><strong>Admin access is active.</strong> Documents do not use paid credits during this verified session. <button className="text-button" disabled={busy} onClick={()=>setShowAdmin(true)}>Manage admin session</button></div> : billing?.enabled && <div className="billing-upload-note"><strong>₹999 for two documents.</strong> One credit per distinct PDF. Reopen and download the same file again at no extra charge. <button className="text-button" disabled={busy} onClick={() => setShowBilling(true)}>Buy / activate</button> {billing.payment_provider === 'razorpay' && <button className="text-button" disabled={busy} onClick={() => setShowAdmin(true)}>Admin login</button>}</div>}
+          {billing?.admin ? <div className="billing-upload-note admin-active" role="status"><strong>Admin access is active.</strong> Documents do not use paid credits during this verified session. <button className="text-button" disabled={busy} onClick={()=>setShowAdmin(true)}>Manage admin session</button></div> : billing?.enabled && <div className="billing-upload-note"><strong>Proposed plan: $99 USD per month.</strong> Up to 100 distinct PDFs per month. All pages, repeat cleanups and downloads included. <button className="text-button" disabled={busy} onClick={() => setShowBilling(true)}>Plan details</button> {billing.payment_provider === 'razorpay' && <button className="text-button" disabled={busy} onClick={() => setShowAdmin(true)}>Admin login</button>}</div>}
           <p className="upload-tool-note">Upload a PDF for watermark cleanup or lossless compression with a 25 MB target.</p>
           <div className="upload-layout"><section className="upload-card"><div className="card-topline"><span><Upload size={16} />ADD YOUR DOCUMENT</span><span className="file-type">.PDF</span></div>
             <button disabled={busy} className={`dropzone ${dragging ? 'dragging' : ''}`} onClick={() => fileRef.current?.click()} onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); if (event.dataTransfer.files.length > 1) setError('Please add one PDF at a time.'); else upload(event.dataTransfer.files[0]); }}>

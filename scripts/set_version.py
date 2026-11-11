@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def set_version(value):
     if not re.fullmatch(r'\d+\.\d+(?:\.\d+)?',value):
         raise ValueError('Use a stable numeric version such as 2.3.0.')
-    path=ROOT/'app_version.py'
+    path=ROOT/'clearpage/app_version.py'
     text,count=re.subn(r"^VERSION = '[^']+'$",f"VERSION = '{value}'",path.read_text(),flags=re.M)
     if count != 1:raise ValueError('Expected exactly one VERSION assignment.')
     readme=ROOT/'README.md'

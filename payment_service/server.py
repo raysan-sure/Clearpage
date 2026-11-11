@@ -12,8 +12,8 @@ import time
 from flask import Flask, jsonify, request, send_from_directory
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from licensing import DOCUMENTS, PRICE_MINOR, CURRENCY, PRODUCT, PLANS, encode
-from payment_http import json_request, PaymentUnavailable
+from clearpage.billing.licensing import DOCUMENTS, PRICE_MINOR, CURRENCY, PRODUCT, PLANS, encode
+from clearpage.billing.payment_http import json_request, PaymentUnavailable
 
 
 class Razorpay:
@@ -30,7 +30,7 @@ def create_app(settings=None):
     required = ('RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET',
                 'CLEARPAGE_SIGNING_KEY', 'CLEARPAGE_SIGNING_PASSWORD', 'CLEARPAGE_PAYMENT_DB')
     if any(not settings.get(k) for k in required):
-        raise ValueError('Configure all seller payment environment variables. See RAZORPAY.md.')
+        raise ValueError('Configure all seller payment environment variables. See docs/RAZORPAY.md.')
     key_id = settings['RAZORPAY_KEY_ID']
     if not re.fullmatch(r'rzp_(test|live)_[A-Za-z0-9]+', key_id):
         raise ValueError('Invalid Razorpay key ID.')

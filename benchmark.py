@@ -1,10 +1,10 @@
-"""Run a private, repeatable reference benchmark. See BENCHMARK.md."""
+"""Run a private, repeatable reference benchmark. See docs/BENCHMARK.md."""
 import argparse
 import json
 from pathlib import Path
 from statistics import mean
-from engine import inspect_pdf, render_page
-from quality_check import compare, validate_reference
+from clearpage.pdf.engine import inspect_pdf, render_page
+from clearpage.pdf.quality_check import compare, validate_reference
 
 
 def run(manifest):

@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 
 def version():
-    tree = ast.parse((ROOT/'app_version.py').read_text(encoding='utf-8'))
+    tree = ast.parse((ROOT/'clearpage/app_version.py').read_text(encoding='utf-8'))
     values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
               and any(isinstance(target, ast.Name) and target.id == 'VERSION' for target in node.targets)]
     if len(values) != 1 or not isinstance(values[0], str) or not re.fullmatch(r'\d+\.\d+(?:\.\d+)?', values[0]):
@@ -105,8 +105,8 @@ def build(value):
         raise RuntimeError('Build on Windows x64 with Python 3.12.')
     if sys.version_info[:2] != (3, 12):
         raise RuntimeError('Python 3.12 is required.')
-    from neural_restore import verify_model
-    from text_restore import MODEL_NAME, MODEL_SHA256
+    from clearpage.restore.neural_restore import verify_model
+    from clearpage.restore.text_restore import MODEL_NAME, MODEL_SHA256
     verify_model(ROOT/'models/big-lama.pt')
     if digest(ROOT/'models'/MODEL_NAME) != MODEL_SHA256:
         raise ValueError('Text model hash mismatch.')
@@ -116,8 +116,8 @@ def build(value):
     command(sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', 'ClearPage.spec')
     bundle = ROOT/'dist/ClearPage'
     collect_licenses(bundle)
-    for name in ('README.md', 'RELEASING.md', 'BENCHMARK.md', 'GITHUB-COMPARISON.md', 'BILLING.md', 'RAZORPAY.md'):
-        shutil.copy2(ROOT/name, bundle/name)
+    shutil.copy2(ROOT/'README.md', bundle/'README.md')
+    shutil.copytree(ROOT/'docs', bundle/'docs')
     (bundle/'START-HERE.txt').write_text(
         f'ClearPage {value} - Windows x64\n\n'
         'Extract the complete ZIP, then open ClearPage/ClearPage.exe.\n'

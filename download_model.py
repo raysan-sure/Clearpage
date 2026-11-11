@@ -1,7 +1,7 @@
 """One-time developer setup; the Windows AI package already includes these weights."""
 from pathlib import Path
 import urllib.request
-from neural_restore import verify_model
+from clearpage.restore.neural_restore import verify_model
 
 if __name__=='__main__':
     target=Path(__file__).resolve().parent/'models/big-lama.pt'

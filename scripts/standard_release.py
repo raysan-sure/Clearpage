@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from licensing import configuration, payment_ready
+from clearpage.billing.licensing import configuration, payment_ready
 from scripts.release import collect_licenses, version, digest
 
 

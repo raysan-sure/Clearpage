@@ -12,7 +12,7 @@ import zipfile
 import numpy as np
 from PIL import Image, ImageDraw
 from reportlab.pdfgen.canvas import Canvas
-import engine
+from clearpage.pdf import engine
 
 
 def require(condition, message):
@@ -119,7 +119,7 @@ def check_package(bundle, version):
                 verified.append(kind)
                 post('/api/clear/'+identifier, {})
             # Exercise selection inside the actual frozen application.
-            from test_apdf import sample
+            from tests.test_apdf import sample
             selected_input=root/'selected-text.pdf'
             sample(selected_input,mutation=lambda m,f,s:m.replace(b'(Sample)',b'(PRIVATE MARK)'))
             selected_job=post('/api/upload',selected_input.read_bytes(),'selected-text.pdf')
