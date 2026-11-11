@@ -12,6 +12,8 @@ import CleanupSuggestions from './CleanupSuggestions';
 import CompressionDialog from './CompressionDialog';
 
 const presets = [
+  { id: 'henry_red', title: 'Henry County · red diagonal stamp', description: 'Use for Henry County scans with a red “NOT AN OFFICIAL COPY” stamp running from bottom left to top right. Include at least two different stamped pages in the same PDF.', image: 'henry-red', tag: 'County scans' },
+  { id: 'union_parish', title: 'Union Parish · purple UNOFFICIAL', description: 'Choose this when purple UNOFFICIAL lettering appears at the top, middle, and bottom of the page. It also cleans the small repeated gray codes.', image: 'union-parish', tag: 'Parish scans' },
   { id: 'hocking_outline', title: 'Hocking County outline', description: 'Choose this when a diagonal line reads “HOCKING COUNTY RECORDER THIS IS AN UNOFFICIAL COPY”. Preview where it crosses words or signatures.', image: 'hocking-outline', tag: 'County scans' },
   { id: 'licensed_diagonal', title: 'Diagonal licensing text', description: 'One diagonal line beginning “LICENSED TO FIRST AMERICAN DATA TREE LLC”. For matching search-package scans. Review words and signatures where the line crosses them.', image: 'licensed-diagonal', tag: 'Search packages' },
   { id: 'kane_outline', title: 'Kane County · dotted outline', description: 'One large diagonal “Unofficial” word drawn with a dotted outline, as in Kane County scans. Review tiny crossings with text and signatures.', image: 'kane-outline', tag: 'County scans' },

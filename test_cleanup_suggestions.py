@@ -104,7 +104,7 @@ class SuggestionTests(unittest.TestCase):
         methods = [method for method, image in entries]
         supported = {'preset', 'overlay', 'polarity', 'gemini_draft'}
         for module in (app.scan_patterns, app.dotted_scans, app.screened_scans,
-                       app.kane_outline, app.licensed_diagonal, app.hocking_outline, app.preble_scans, app.nassau_scans):
+                       app.kane_outline, app.licensed_diagonal, app.hocking_outline, app.union_parish, app.henry_red, app.preble_scans, app.nassau_scans):
             supported.update(module.METHODS)
         self.assertEqual(set(methods), supported)
         self.assertEqual(len(methods), len(supported), 'Duplicate cleanup choice')

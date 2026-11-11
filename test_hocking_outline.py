@@ -38,6 +38,20 @@ def write_shared_pages(path, scan):
 
 
 class HockingOutlineTests(unittest.TestCase):
+    def test_peer_confirms_a_clipped_arc_without_erasing_the_word(self):
+        paper = np.full((112, 144), 255, np.uint8)
+        witness = paper.copy()
+        cv.ellipse(witness, (70, 60), (20, 14), 0, 0, 360, 20, 1, cv.LINE_AA)
+        # The word is printed over opaque paper, which interrupts the ring.
+        scan = witness.copy()
+        scan[:, 57:85] = 255
+        cv.putText(scan, 'F', (61, 75), cv.FONT_HERSHEY_SIMPLEX, .9, 0, 2, cv.LINE_AA)
+        unchanged = hocking.clear_clipped_arcs(scan, scan.copy(), witness, [scan.copy()])
+        np.testing.assert_array_equal(unchanged, scan)
+        result = hocking.clear_clipped_arcs(scan, scan.copy(), witness, [witness])
+        np.testing.assert_array_equal(result[:, 57:85], scan[:, 57:85])
+        self.assertGreater(np.count_nonzero((scan != result) & (witness < 175)), 12)
+
     def test_preserves_foreground_at_crossings(self):
         scan, ink = sample()
         cleaned, details = hocking.clean_pixels(scan)

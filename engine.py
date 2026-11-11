@@ -36,6 +36,12 @@ def inspect_pdf(path):
             bounded = 1 <= w <= 20000 and 1 <= h <= 20000
             supported = bounded and (dotted_scans.scan_object(page) or
                 rewrite_node(page.get_contents(), page.get('/Resources', {}), reader)[2])
+            if bounded and not supported:
+                import union_parish
+                scan = union_parish.scan_object(page)
+                if scan and scan[1].get('/Filter') == '/DCTDecode':
+                    rgb = np.asarray(page.images[0].image.convert('RGB'))
+                    supported = bool(union_parish.stamp_boxes(rgb, jpeg=True))
             if not supported:
                 raise ValueError('A page is too large. Maximum rendered page size is 12 million pixels.')
         if page.rotation % 90:

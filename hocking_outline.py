@@ -9,7 +9,7 @@ import numpy as np
 import pikepdf
 
 METHODS = ('hocking_outline',)
-CACHE = 'hocking-outline-v1'
+CACHE = 'hocking-outline-v2'
 
 @lru_cache(maxsize=1)
 def profile():
@@ -117,7 +117,96 @@ def suggested(source,index):
         return locate(native(image_entry(f.pages[index]))) is not None
 
 
-def clean_pixels(scan,cancelled=lambda:False):
+def peer_scans(document, index, shape, cancelled):
+    """Yield other verified letter-size impressions at the same print coordinates."""
+    height, width = shape
+    layout = layouts().get(f'{width}x{height}')
+    if height >= 2300 or layout is None:
+        return
+    probes = np.float32([[215,1855], [840,1235], [1460,615]])
+    checked = 0
+    for i in sorted(range(len(document.pages)), key=lambda j: abs(index-j)):
+        if cancelled():
+            raise InterruptedError('Cancelled')
+        if i == index:
+            continue
+        entry = image_entry(document.pages[i])
+        if entry is None:
+            continue
+        obj = entry[1]
+        other = layouts().get(f'{obj.Width}x{obj.Height}')
+        if other is None:
+            continue
+        offset = probes @ (other[:,:2]-layout[:,:2]).T + other[:,2]-layout[:,2]
+        if np.max(np.linalg.norm(offset, axis=1)) > 1.8:
+            continue
+        checked += 1
+        donor = native(entry)
+        if locate(donor) is not None:
+            yield donor
+        if checked >= 5:
+            break
+
+
+def clear_clipped_arcs(scan, cleaned, template, peers):
+    """Remove a surviving component only if clear paper on another sheet
+    shows the same outline continuing beyond the clipped stroke."""
+    ink = scan < 214
+    n, labels, stats, _ = cv.connectedComponentsWithStats(ink.astype('uint8'), 8)
+    distance = cv.distanceTransform((template >= 248).astype('uint8'), cv.DIST_L2, 5)
+    candidates = np.unique(labels[(cleaned < 214) & (distance < 3.2)])
+    patches = {}
+    for k in candidates[candidates > 0]:
+        x, y, w, h, area = stats[k]
+        if area < 4 or area > 350 or max(w,h) > 52:
+            continue
+        s = np.s_[y-14:y+h+14, x-14:x+w+14]
+        mask = labels[s] == k
+        if distance[s][mask].max() > 3.2:
+            continue
+        patches[k] = (s, mask)
+    marked = np.zeros(n, bool)
+    for peer in peers:
+        for k, (s, mask) in patches.items():
+            if marked[k]:
+                continue
+            other = peer[s]
+            if other.shape != mask.shape:
+                continue
+            pred = template[s]
+            # Reject other copies of the same word, other nearby text and
+            # dense stamps. The witness must itself look like bare outline.
+            zone = cv.dilate(mask.astype('uint8'), cv.getStructuringElement(cv.MORPH_ELLIPSE,(17,17)))
+            if np.any((zone != 0) & (other < 210) & (distance[s] > 4)):
+                continue
+            corr = cv.matchTemplate(255-other, 255-pred, cv.TM_CCOEFF_NORMED, mask=zone)[0,0]
+            if not corr >= .65 or not np.any((scan[s]<150) & (other>225) & ~mask):
+                continue
+            source = scan[s][mask].astype(np.int16)
+            witness = other[mask].astype(np.int16)
+            excess = np.maximum(witness-source, 0)
+            if excess.mean() > 18 or np.max(excess) > 78:
+                continue
+            # Require matching edge tones as well as dark pixels, and a
+            # continuation that is actually absent in the target scan.
+            edges = (source>12) & (source<205)
+            if np.count_nonzero(edges & (np.abs(witness-source)<44)) < max(2, edges.sum()*.35):
+                continue
+            ring = (cv.dilate(mask.astype('uint8'), np.ones((5,5),'uint8'))>0) & ~mask
+            if np.count_nonzero(ring & (other<165) & (scan[s]>235)) < 2:
+                continue
+            marked[k] = True
+    if not marked.any():
+        return cleaned
+    erase = marked[labels]
+    to_arc = cv.distanceTransform((~erase).astype('uint8'), cv.DIST_L2, 5)
+    to_ink = cv.distanceTransform((~(ink & ~erase)).astype('uint8'), cv.DIST_L2, 5)
+    out = cleaned.copy()
+    out[(to_arc <= 3.6) & (to_arc < to_ink) & (distance < 6)] = 255
+    return out
+
+
+def clean_pixels(scan,cancelled=lambda:False,peers=None):
     if cancelled():raise InterruptedError('Cancelled')
     details=dict(native_hocking=True,scan_pattern=True,matched=False,changed=0,
                  protected=0,confidence=None,uncertain=False,reviewed=False,
@@ -127,6 +216,8 @@ def clean_pixels(scan,cancelled=lambda:False):
     if cancelled():raise InterruptedError('Cancelled')
     first,_=remove_components(scan,fitted)
     result=refine(first,fitted)
+    if peers is not None and scan.shape[0] < 2300:
+        result=clear_clipped_arcs(scan,result,fitted,peers)
     if cancelled():raise InterruptedError('Cancelled')
     changed=result!=scan
     distance=cv.distanceTransform((fitted>=248).astype('uint8'),cv.DIST_L2,5)
@@ -152,7 +243,9 @@ def prepare(source,index,directory,cancelled=lambda:False):
     try:
         with pikepdf.open(source) as f, pikepdf.new() as single:
             page=f.pages[index];entry=image_entry(page)
-            result,details=clean_pixels(native(entry),cancelled)
+            scan=native(entry)
+            peers=peer_scans(f,index,scan.shape,cancelled) if scan is not None else None
+            result,details=clean_pixels(scan,cancelled,peers)
             single.pages.append(page)
             if details['matched']:
                 name,obj=entry
