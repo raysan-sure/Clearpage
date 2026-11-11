@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT))
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from werkzeug.security import generate_password_hash
-from licensing import atomic_json, encode
+from clearpage.billing.licensing import atomic_json, encode
 
 
 def save_settings(path, key_id, key_secret, username, password, support_email):

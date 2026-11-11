@@ -8,8 +8,9 @@ from pypdf import PdfWriter
 from pypdf.generic import ArrayObject,NameObject,FloatObject
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.utils import ImageReader
-import pdf_overlays,pdf_selection,engine,page_polarity,benchmark
-from test_apdf import sample
+from clearpage.pdf import pdf_overlays, pdf_selection, engine, page_polarity
+import benchmark
+from tests.test_apdf import sample
 
 
 def run(root):

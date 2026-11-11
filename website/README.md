@@ -27,7 +27,7 @@ before navigating. Missing releases and network failures display a message on
 the website instead of navigating to a GitHub 404. The first public release is
 still required for customer downloads.
 
-Plan: INR 999 for **two** distinct PDF documents. Seller: Raysan sure.
+Proposed monthly plan: USD 99 for up to 100 distinct PDFs per month, including all pages, repeat cleanups and downloads. Seller: Raysan sure.
 Support: sales@zynape.com.
 
 This is a buildless HTML/CSS site. The local preview is assembled under the task's
@@ -35,7 +35,7 @@ This is a buildless HTML/CSS site. The local preview is assembled under the task
 GitHub latest-stable-release URL for `ClearPage-Windows-x64.zip`. Each verified
 production release publishes this stable-name asset alongside its versioned ZIP.
 No website edit or Render ZIP upload is needed for future releases. See
-`AUTOMATIC-RELEASES.md`; the first compatible published release is required before
+`../docs/AUTOMATIC-RELEASES.md`; the first compatible published release is required before
 the public download link works. The local ZIP in outputs is available for review.
 
 Nothing is published. Terms/privacy text is a draft. Custom cleanup includes the seller-requested
@@ -68,7 +68,7 @@ omit that flag. Keep the entire `_internal` directory beside the EXE, include
 applicable dependency licenses, smoke-test the packaged executable, and ZIP the
 whole application folder. Never bundle merchant secrets or seller signing keys.
 
-The current Windows build requires online authorization. See HOSTING.md for the
+The current Windows build requires online authorization. See ../docs/HOSTING.md for the
 Render deployment, persistent storage, secrets and build-order requirements.
 
 Live static website: https://clearpage-omega.vercel.app

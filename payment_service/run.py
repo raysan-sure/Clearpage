@@ -22,7 +22,7 @@ def main():
             parser.error('This test launcher accepts only Razorpay Test Mode keys.')
         app = create_app(settings)
     except (ValueError, OSError, TypeError):
-        parser.error('Complete the private payment settings, signing key and password. See RAZORPAY.md.')
+        parser.error('Complete the private payment settings, signing key and password. See docs/RAZORPAY.md.')
     options = {}
     if args.trusted_proxy:
         options = dict(trusted_proxy=args.trusted_proxy, trusted_proxy_count=1,

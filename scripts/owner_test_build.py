@@ -8,7 +8,7 @@ import subprocess
 import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from licensing import configuration, payment_ready
+from clearpage.billing.licensing import configuration, payment_ready
 from scripts.release import version, collect_licenses
 from scripts.standard_smoke import check_package
 

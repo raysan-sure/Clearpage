@@ -45,7 +45,7 @@ jobs:
         run: |
           $env:CLEARPAGE_DATA_DIR = Join-Path $env:RUNNER_TEMP 'clearpage-tests'
           $env:CLEARPAGE_BILLING_CONFIG = Join-Path $env:RUNNER_TEMP 'absent-free-config.json'
-          python -m unittest test_admin test_razorpay test_billing test_workspace test_pdf_export test_pdf_compression test_app.APITests test_preble_scans test_nassau_scans test_release test_hosting test_updates test_release_automation test_desktop test_aligned_gray test_batch_memory test_cleanup_suggestions test_flat_gray_scans test_gemini_cleanup test_red_scans test_repeated_copy test_repeated_document test_repeated_ai test_gray_scans test_scan_patterns test_clean_repeated_cli
+          python -m unittest discover -s tests -t . -v
       - uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
         with:
           node-version: '22'
@@ -54,7 +54,7 @@ jobs:
         run: |
           npm ci
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --test scripts/test_checkout.mjs scripts/test_download.mjs
+          node --test tests/test_checkout.mjs tests/test_download.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm run build
       - name: Build, extract and verify Windows ZIP

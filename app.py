@@ -14,45 +14,46 @@ import time
 import base64
 import subprocess
 from functools import wraps
-from app_version import VERSION
+from clearpage.paths import RESOURCE_ROOT
+from clearpage.app_version import VERSION
 from flask import Flask, request, jsonify, send_file
 from werkzeug.serving import make_server, WSGIRequestHandler
 from werkzeug.utils import secure_filename
 from PIL import Image
 import numpy as np
-from engine import inspect_pdf, render_page, known_mask, paint_mask, clean, write_pdf, page_fingerprint, save_reviewed_patch, load_reviewed_patch
+from clearpage.pdf.engine import inspect_pdf, render_page, known_mask, paint_mask, clean, write_pdf, page_fingerprint, save_reviewed_patch, load_reviewed_patch
 import cv2
-import word_repair
-import auto_restore
-import scan_inversion
-import neural_restore
-import text_restore
-import pdf_overlays
-import page_polarity
-import quality_check
-import scan_input
-import pdf_selection
-import dotted_scans
-import screened_scans
-import kane_outline
-import licensed_diagonal
-import hocking_outline
-import union_parish
-import henry_red
-import lake_outline
-import preble_scans
-import nassau_scans
-import scan_patterns
-import red_scans
-import cumberland_red
-import flat_gray_scans
-import repeated_copy
-import cleanup_suggestions
-import huntington
-import gemini_cleanup
-import pdf_compression
+from clearpage.restore import word_repair
+from clearpage.restore import auto_restore
+from clearpage.restore import scan_inversion
+from clearpage.restore import neural_restore
+from clearpage.restore import text_restore
+from clearpage.pdf import pdf_overlays
+from clearpage.pdf import page_polarity
+from clearpage.pdf import quality_check
+from clearpage.pdf import scan_input
+from clearpage.pdf import pdf_selection
+from clearpage.presets import dotted_scans
+from clearpage.presets import screened_scans
+from clearpage.presets import kane_outline
+from clearpage.presets import licensed_diagonal
+from clearpage.presets import hocking_outline
+from clearpage.presets import union_parish
+from clearpage.presets import henry_red
+from clearpage.presets import lake_outline
+from clearpage.presets import preble_scans
+from clearpage.presets import nassau_scans
+from clearpage.presets import scan_patterns
+from clearpage.presets import red_scans
+from clearpage.presets import cumberland_red
+from clearpage.presets import flat_gray_scans
+from clearpage.presets import repeated_copy
+from clearpage import cleanup_suggestions
+from clearpage.presets import huntington
+from clearpage.restore import gemini_cleanup
+from clearpage.pdf import pdf_compression
 
-BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+BASE = RESOURCE_ROOT
 ROOT = Path(tempfile.mkdtemp(prefix='ClearPage-'))
 PROFILE_ROOT = Path(os.environ.get('LOCALAPPDATA', str(Path.home())))/'ClearPage'/'reviewed-pages'
 LOCK = threading.RLock()
@@ -552,7 +553,7 @@ def process_page(job, index, options):
                 clean_red = cumberland_red.clean if cumberland else red_scans.clean
                 pixels, changed, details = clean_red(before, cancelled)
         elif options['method'] == 'unofficial_copy':
-            import gray_scans
+            from clearpage.presets import gray_scans
             native = gray_scans.prepare(job['source'], index, job['dir'], BASE/'assets', cancelled)
             if native is not None:
                 target, details = native
@@ -1098,7 +1099,7 @@ def export_worker(job, keep):
                 dotted_scans.write_clean(job['source'], job['dir']/'cleaned.pdf', keep,
                                         job['options']['method'], job['dir'], lambda:job['cancel'])
             elif job['options']['method'] in ('unofficial_copy', 'red_copy', 'cumberland_red', 'flat_gray_copy', 'repeated_copy'):
-                import gray_scans
+                from clearpage.presets import gray_scans
                 module, native_key = {'red_copy': (red_scans, 'native_red'),
                                       'cumberland_red': (red_scans, 'native_red'),
                                       'flat_gray_copy': (flat_gray_scans, 'native_flat_gray'),
@@ -1348,7 +1349,7 @@ class QuietHandler(WSGIRequestHandler):
 def main():
     global SERVER, HOST
     if '--release-self-test' in sys.argv:
-        from release_selftest import run
+        from clearpage.release_selftest import run
         run(BASE, Path(sys.argv[sys.argv.index('--release-self-test')+1]))
         return
     SERVER = make_server('127.0.0.1', 0, app, threaded=True, request_handler=QuietHandler)
@@ -1366,13 +1367,13 @@ def main():
     worker = threading.Thread(target=SERVER.serve_forever, daemon=True)
     worker.start()
     try:
-        from desktop_shell import open_window
+        from clearpage.desktop_shell import open_window
         if '--desktop-test-info' in sys.argv:
             Path(sys.argv[sys.argv.index('--desktop-test-info')+1]).write_text(
                 json.dumps({'url': url}), encoding='utf-8')
         open_window(url)
     except Exception:
-        from desktop_shell import show_startup_error, write_startup_log
+        from clearpage.desktop_shell import show_startup_error, write_startup_log
         log_path = write_startup_log()
         if '--desktop-smoke-info' not in sys.argv:
             show_startup_error(log_path)
@@ -1387,11 +1388,11 @@ def main():
         cleanup()
 
 
-import workspace
+from clearpage import workspace
 workspace.register(sys.modules[__name__])
-import licensing
+from clearpage.billing import licensing
 licensing.register(sys.modules[__name__])
-import object_routes
+from clearpage import object_routes
 object_routes.register(sys.modules[__name__])
 
 

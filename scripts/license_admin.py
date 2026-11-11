@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from licensing import DOCUMENTS, PRICE_MINOR, PRODUCT, CURRENCY, atomic_json, encode
+from clearpage.billing.licensing import DOCUMENTS, PRICE_MINOR, PRODUCT, CURRENCY, atomic_json, encode
 
 
 def keygen(private_path, public_path, password):
@@ -71,7 +71,7 @@ def main():
     create = commands.add_parser('keygen', help='Create an encrypted private key and public verification key.')
     create.add_argument('--private-key', required=True)
     create.add_argument('--public-key', required=True)
-    activate = commands.add_parser('issue', help='Issue one ₹999 / two-document pack after checking your bank.')
+    activate = commands.add_parser('issue', help='Issue one $99 / two-document pack after checking your bank.')
     activate.add_argument('--private-key', required=True)
     activate.add_argument('--installation', required=True)
     activate.add_argument('--customer', required=True)

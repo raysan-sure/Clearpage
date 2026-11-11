@@ -6,7 +6,7 @@ from PyInstaller.utils.hooks import collect_all, collect_delvewheel_libs_directo
 
 root = Path(SPECPATH)
 # Opt-in commercial builds include public payment instructions and a public key only.
-from licensing import configuration, payment_ready
+from clearpage.billing.licensing import configuration, payment_ready
 owner_test = os.environ.get('CLEARPAGE_BUILD_OWNER_TEST') == '1'
 billing_path = Path(os.environ['CLEARPAGE_BUILD_OWNER_TEST_CONFIG']) if owner_test else root / 'billing.json'
 preview = os.environ.get('CLEARPAGE_BUILD_PREVIEW') == '1'
@@ -18,7 +18,7 @@ if owner_test:
         raise ValueError('Private owner test builds require the exact local test service and cannot be release/preview builds.')
     os.environ['CLEARPAGE_PAYMENT_LOCAL_TEST'] = '1'
 if billing_path.exists() and not payment_ready(configuration(billing_path)) and not preview:
-    raise ValueError('Complete billing.json before distributing a paid build. See BILLING.md.')
+    raise ValueError('Complete billing.json before distributing a paid build. See docs/BILLING.md.')
 datas = [(str(root/'assets/repeated-copy.png'), 'assets'), (str(root/'static'), 'static'), (str(root/'assets/clearpage.ico'), 'assets'), (str(root/'assets/huntington.npy'), 'assets'),
          (str(root/'assets/nassau-border.npy'), 'assets'),
          (str(root/'assets/nassau-layout.png'), 'assets'),
@@ -51,7 +51,7 @@ if not billing_path.exists():
 policy_dir = root / 'build' / ('owner-test-policy' if owner_test else 'customer-policy')
 policy_dir.mkdir(parents=True, exist_ok=True)
 policy_hook = policy_dir / 'enforce_paid.py'
-policy = 'import licensing\nlicensing.FROZEN_CONFIG_HASH = ' + repr(hashlib.sha256(billing_path.read_bytes()).hexdigest()) + '\n'
+policy = 'from clearpage.billing import licensing\nlicensing.FROZEN_CONFIG_HASH = ' + repr(hashlib.sha256(billing_path.read_bytes()).hexdigest()) + '\n'
 if owner_test:
     from scripts.owner_test_build import profile_policy
     policy += profile_policy(os.environ['CLEARPAGE_BUILD_OWNER_TEST_PROFILE'])

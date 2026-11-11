@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from app_version import VERSION
+from clearpage.app_version import VERSION
 
 
 def icon():

@@ -2,15 +2,24 @@
 
 A local Windows application for watermark cleanup in PDFs and scanned images.
 
+## Repository layout
+
+Run commands from the repository root. `app.py` starts the desktop app.
+The PDF processing code lives in `clearpage/pdf/`, cleanup profiles in
+`clearpage/presets/`, image and text restoration in `clearpage/restore/`,
+and desktop payment code in `clearpage/billing/`. The seller service lives
+in `payment_service/`. See `tests/` for regression tests, `docs/` for guides,
+and `config/examples/` for sample billing settings.
+
 ## Optional paid document packs
 
-Sell **₹999 packs for two distinct PDFs** using Razorpay checkout with
+Sell **$99 packs for two distinct PDFs** using Razorpay checkout with
 server-verified payments and signed online document authorization. Reopening and
 downloading the exact same paid PDF does not use another credit. See
-[RAZORPAY.md](RAZORPAY.md) for test keys, the separate seller payment service,
+[RAZORPAY.md](docs/RAZORPAY.md) for test keys, the separate seller payment service,
 deployment and recovery. Merchant secrets never go into the customer app.
-The optional manual bank-transfer provider is documented in [BILLING.md](BILLING.md).
-Owner-only login in the desktop [Admin panel](ADMIN.md) authorizes document work
+The optional manual bank-transfer provider is documented in [BILLING.md](docs/BILLING.md).
+Owner-only login in the desktop [Admin panel](docs/ADMIN.md) authorizes document work
 without spending credits. It requires private server provisioning and online
 verification; customer builds have no default admin account or free-use switch.
 
@@ -133,7 +142,7 @@ Responses with changed page proportions, invalid images or incomplete output
 are rejected; accepted images are resized to the source canvas when needed.
 
 Protocol reference: [Google image generation and editing](https://ai.google.dev/gemini-api/docs/generate-content/image-generation).
-`test_gemini_cleanup.py` exercises mocked protocol responses, credential secrecy,
+`tests/test_gemini_cleanup.py` exercises mocked protocol responses, credential secrecy,
 explicit consent, cancellation, caching, review enforcement and multipage export.
 These tests do not measure Gemini's visual quality or verify live account access.
 
@@ -202,7 +211,7 @@ result show the method's limitations; changed pages start unchecked. This is
 recovered exactly from a flattened scan. Marks in protected areas may remain.
 Changed-pixel counts and residual ink counts are not accuracy percentages.
 
-`test_repeated_document.py` checks known text (including faint text and short
+`tests/test_repeated_document.py` checks known text (including faint text and short
 numbers), signatures, stamps and barcodes at three image sizes, clean-page
 rejection, cancellation, non-AI routing, image upload, and preview/export parity.
 The older `repeated_diagonal` API remains available for margins-only cleanup.
@@ -255,7 +264,7 @@ image dimensions; unchecked pages retain their original images. No OCR or
 generated text is used. Inspect fine characters and intersections: attached
 watermark fragments may remain, and very thin overlapping ink is ambiguous.
 
-Regression coverage is in `test_preble_scans.py`. The packaged pattern contains
+Regression coverage is in `tests/test_preble_scans.py`. The packaged pattern contains
 only the watermark silhouette; customer documents are not bundled.
 
 The edge refinement uses a centered solid-stroke guard and nearby horizontal
@@ -324,7 +333,7 @@ for export and can be deselected individually. It preserves pixels outside the
 detected mark. Review overlapping text and signatures because pixels obscured
 by the watermark are estimated from nearby strokes.
 
-Regression coverage is in `test_dotted_scans.py`, automatically included by the
+Regression coverage is in `tests/test_dotted_scans.py`, automatically included by the
 existing Windows CI test discovery. Company sample PDFs are kept out of Git.
 
 ## New in 2.2
@@ -440,7 +449,7 @@ mode and retained for image-cleanup modes.
 
 **Quality check** compares the current processed preview with a trusted clean
 PDF and exports a JSON report. For repeatable private benchmarks across releases,
-see [BENCHMARK.md](BENCHMARK.md) and benchmark.py. These measure pixel differences
+see [BENCHMARK.md](docs/BENCHMARK.md) and benchmark.py. These measure pixel differences
 and preservation; they do not claim word accuracy or an overall percentage.
 
 ## Employees: start here
@@ -532,7 +541,7 @@ AI pages are unchecked for export initially because reconstructed strokes can al
 
 For one damaged word, expand **Repair damaged words**, select the word, enter its verified wording, and choose **LaMa AI · preview reconstructed strokes**. Preview, check the letters and surrounding text, then apply. The wording field is a review reference; it does not instruct the model to spell that word. Only the watermark-mask pixels within the word selection change. Clean-occurrence copying and rendering confirmed text remain available when the AI preview is inaccurate. Undo last word repair also works for AI repairs.
 
-The model is pretrained LaMa, not a newly trained document model. It uses full preview-resolution tiles and copies only selected pixels, preserving every pixel outside the mask. Original files are never overwritten. Model identity is checked by SHA-256 before loading. See GITHUB-COMPARISON.md for measured results and vendor/AI-PROVENANCE.txt for sources and licenses.
+The model is pretrained LaMa, not a newly trained document model. It uses full preview-resolution tiles and copies only selected pixels, preserving every pixel outside the mask. Original files are never overwritten. Model identity is checked by SHA-256 before loading. See docs/GITHUB-COMPARISON.md for measured results and vendor/AI-PROVENANCE.txt for sources and licenses.
 
 Developers: use Python 3.12 on Windows, install `requirements-ai.txt`, then run `python download_model.py` once to retrieve the pinned weights. Run `python app.py`. The source ZIP omits weights and runtime binaries; the Windows package includes them.
 
@@ -604,7 +613,7 @@ Imported reviewed repairs persist under `%LOCALAPPDATA%\ClearPage\reviewed-pages
 
 ## For company IT / source installation
 
-This repository contains the application source. For the current paid Standard Windows edition, use [AUTOMATIC-RELEASES.md](AUTOMATIC-RELEASES.md): pushes to main run preview builds; matching version-tag pushes publish verified production releases. The older full-model build instructions below and [RELEASING.md](RELEASING.md) describe the optional AI edition. Use Python 3.12 x64:
+This repository contains the application source. For the current paid Standard Windows edition, use [AUTOMATIC-RELEASES.md](docs/AUTOMATIC-RELEASES.md): pushes to main run preview builds; matching version-tag pushes publish verified production releases. The older full-model build instructions below and [RELEASING.md](docs/RELEASING.md) describe the optional AI edition. Use Python 3.12 x64:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -626,7 +635,7 @@ To build and verify the portable Windows package from a fresh checkout:
 The verified ZIP, SHA-256 checksums and build report are in `release-assets/`.
 The current **Windows release** workflow builds the Standard edition, not this
 optional AI package. Use **Actions → Windows release → Run workflow** for a
-preview without publishing. See [AUTOMATIC-RELEASES.md](AUTOMATIC-RELEASES.md)
+preview without publishing. See [AUTOMATIC-RELEASES.md](docs/AUTOMATIC-RELEASES.md)
 for public payment configuration, version tags, and customer update notices.
 
 Share the complete ZIP, including `_internal`. Code signing, a managed installer,
@@ -668,12 +677,12 @@ Review words, punctuation, signatures, and map details before accepting results.
 The repeated-diagonal mode does not promise complete watermark removal or infer
 obscured characters; its protected area depends on detected horizontal content.
 
-`test_scan_patterns.py` checks the supported gray layouts, rejection of mismatched pages,
+`tests/test_scan_patterns.py` checks the supported gray layouts, rejection of mismatched pages,
 pixel preservation, partial diagonal cleanup, cancellation, packaging assets,
 and application preview/batch/selective export. Customer-file acceptance checks
 are run locally and are not committed to the repository.
 
-Run `python test_app.py`, `python test_overlays.py`, `python test_quality.py`, and `python test_scans.py` in the Windows source environment. Tests exercise cleanup boundaries, text preservation, rotated/cropped PDF export, page retention, local request protection, upload validation, preview, batch processing, selective export, and session cleanup. Word-repair tests also verify selection validation, exact-case donor matching, preview isolation, confirmation, stale-preview rejection, outside-rectangle preservation, reprocessing, exported pixels and exact undo. Quality tests cover negative scans, manual overrides, normal-page preservation, reference metrics and benchmark validation.
+Run `python -m unittest tests.test_app`, `python -m unittest tests.test_overlays`, `python -m unittest tests.test_quality`, and `python -m unittest tests.test_scans` in the Windows source environment. Tests exercise cleanup boundaries, text preservation, rotated/cropped PDF export, page retention, local request protection, upload validation, preview, batch processing, selective export, and session cleanup. Word-repair tests also verify selection validation, exact-case donor matching, preview isolation, confirmation, stale-preview rejection, outside-rectangle preservation, reprocessing, exported pixels and exact undo. Quality tests cover negative scans, manual overrides, normal-page preservation, reference metrics and benchmark validation.
 
 
 ### Small repeated gray copy marks
@@ -699,21 +708,21 @@ intersections are estimated from neighboring ink with a local filter, so they
 are not guaranteed to match an unavailable clean original. No OCR, cloud, or AI
 is required. Blank, shifted, differently sized, and unmatched pages stay original.
 The watermark-only profile is bundled in Windows packages; customer documents
-are not bundled. Regression coverage is in `test_kane_outline.py`.
+are not bundled. Regression coverage is in `tests/test_kane_outline.py`.
 
 ## Separate gray Un-Official overlays
 
 Choose **Text & website marks** for the supported gray diagonal “Un-Official”
 PDF text overlay on search packages and large maps. Upload suggestions detect
 this variant automatically. Preview, whole-document cleanup, and export use
-the same PDF-object removal in `pdf_overlays.py`.
+the same PDF-object removal in `clearpage/pdf/pdf_overlays.py`.
 
 The detector checks the terminal text block, exact character mapping, font,
 color, opacity, rotation, and underlying scan. It removes only the matching
 overlay commands; original scan bytes, page geometry, and unselected pages
 remain unchanged. This variant does not reconstruct letters or use AI.
 Flattened or differently encoded marks require a different supported method.
-Synthetic positive and negative cases are in `test_unofficial_overlay.py`.
+Synthetic positive and negative cases are in `tests/test_unofficial_overlay.py`.
 
 ## Diagonal licensing text on tiled scans
 
@@ -724,13 +733,13 @@ preview and processing. This variant supports the verified 2560-pixel-wide,
 It checks the PDF placement commands and the watermark's native pixel position;
 unknown layouts, shifted marks, grayscale scans, and unmatched pages stay original.
 
-Preview, processing, and export share `licensed_diagonal.py`. Only the 39,629
+Preview, processing, and export share `clearpage/presets/licensed_diagonal.py`. Only the 39,629
 profile pixels are interpolated; every other native pixel, page dimension, and
 placement command is unchanged. No OCR or AI rewrites words. Intersections with
 text and signatures are estimates, so review and select cleaned pages before
 exporting. Unselected pages stay original. The packaged profile contains only
 watermark geometry and image-placement instructions, not customer document text.
-Regression coverage is in `test_licensed_diagonal.py`.
+Regression coverage is in `tests/test_licensed_diagonal.py`.
 
 ## Hocking County outline
 

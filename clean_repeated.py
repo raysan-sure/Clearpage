@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import tempfile
 from PIL import Image, ImageOps
-from scan_patterns import repeated_document
+from clearpage.presets.scan_patterns import repeated_document
 
 
 def run(source, destination):
@@ -23,7 +23,7 @@ def run(source, destination):
     if source.suffix.lower() == '.pdf':
         if destination.suffix.lower() != '.pdf':
             raise ValueError('PDF input requires a .pdf output filename.')
-        import engine
+        from clearpage.pdf import engine
         count, _ = engine.inspect_pdf(source)
         with tempfile.TemporaryDirectory(prefix='ClearPage-offline-') as temporary:
             folder = Path(temporary); edits = {}; results = []

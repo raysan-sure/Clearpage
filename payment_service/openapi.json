@@ -8,7 +8,7 @@
   "paths": {
     "/api/orders": {
       "post": {
-        "summary": "Create or resume a fixed INR 999 order; claim is the idempotency key. Existing orders keep their original plan.",
+        "summary": "Create or resume a fixed USD 99 order; claim is the idempotency key. Existing orders keep their original plan.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -541,10 +541,11 @@
           "amount": {
             "type": "integer",
             "enum": [
+              9900,
               99900,
               2000
             ],
-            "description": "99900 paise for new INR packs; 2000 cents only for existing legacy USD orders."
+            "description": "9900 cents for new USD packs. Existing orders may use 99900 INR paise or 2000 USD cents."
           },
           "currency": {
             "type": "string",
@@ -575,7 +576,7 @@
               3,
               2
             ],
-            "description": "Two for new INR packs; three only for existing legacy INR packs."
+            "description": "Two for new USD packs; three only for existing legacy INR packs."
           }
         }
       },
