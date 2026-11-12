@@ -18,11 +18,13 @@ from clearpage.presets import hocking_outline
 from clearpage.presets import union_parish
 from clearpage.presets import henry_red
 from clearpage.presets import lake_outline
+from clearpage.presets import cole_preview
 from clearpage.presets import preble_resampled
 from clearpage.presets import search_package_dots
 from clearpage.pdf import page_polarity
 
 REASONS = {
+    'cole_preview': 'The two diagonal lines, Cole and Preview labels, and preview notices match this scan.',
     'lake_outline': 'The hollow diagonal UNOFFICIAL COPY outline matches the Lake County scan.',
     'preble_unofficial': 'The diagonal UNOFFICIAL COPY lettering has the Preble County print pattern.',
     'henry_red': 'The same red diagonal “NOT AN OFFICIAL COPY” stamp appears on multiple scanned pages.',
@@ -58,6 +60,9 @@ def suggest(source, count, overlays, image_for, assets):
             page = reader.pages[index]
             if overlays[index].get('overlays'):
                 add('overlay', index)
+            if cole_preview.suggested(source, index):
+                add('cole_preview', index)
+                continue
             if lake_outline.suggested(source, index):
                 add('lake_outline', index)
                 continue

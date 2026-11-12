@@ -12,6 +12,7 @@ import CleanupSuggestions from './CleanupSuggestions';
 import CompressionDialog from './CompressionDialog';
 
 const presets = [
+  { id: 'cole_preview', title: 'Cole County · crossed preview', description: 'Choose this for a large X with “Cole” on the left and “Preview” on the right. Check any words where the lines or labels crossed the text.', image: 'cole-preview', tag: 'County scans' },
   { id: 'lake_outline', title: 'Lake County · hollow UNOFFICIAL COPY', description: 'Choose this when thin outlines spell UNOFFICIAL COPY from the upper left to the lower right. Preview where a letter crosses handwriting.', image: 'lake-outline', tag: 'County scans' },
   { id: 'henry_red', title: 'Henry County · red diagonal stamp', description: 'Use for Henry County scans with a red “NOT AN OFFICIAL COPY” stamp running from bottom left to top right. Include at least two different stamped pages in the same PDF.', image: 'henry-red', tag: 'County scans' },
   { id: 'union_parish', title: 'Union Parish · purple UNOFFICIAL', description: 'Choose this when purple UNOFFICIAL lettering appears at the top, middle, and bottom of the page. It also cleans the small repeated gray codes.', image: 'union-parish', tag: 'Parish scans' },
