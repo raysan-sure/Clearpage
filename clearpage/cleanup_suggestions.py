@@ -19,11 +19,13 @@ from clearpage.presets import union_parish
 from clearpage.presets import henry_red
 from clearpage.presets import lake_outline
 from clearpage.presets import cole_preview
+from clearpage.presets import not_valid
 from clearpage.presets import preble_resampled
 from clearpage.presets import search_package_dots
 from clearpage.pdf import page_polarity
 
 REASONS = {
+    'not_valid': 'Large gray diagonal NOT VALID lettering matches this scan. Dark ink is preserved; review faint text and crossings.',
     'cole_preview': 'The two diagonal lines, Cole and Preview labels, and preview notices match this scan.',
     'lake_outline': 'The hollow diagonal UNOFFICIAL COPY outline matches the Lake County scan.',
     'preble_unofficial': 'The diagonal UNOFFICIAL COPY lettering has the Preble County print pattern.',
@@ -60,6 +62,9 @@ def suggest(source, count, overlays, image_for, assets):
             page = reader.pages[index]
             if overlays[index].get('overlays'):
                 add('overlay', index)
+            if not_valid.suggested(source, index):
+                add('not_valid', index)
+                continue
             if cole_preview.suggested(source, index):
                 add('cole_preview', index)
                 continue

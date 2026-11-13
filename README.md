@@ -1,4 +1,4 @@
-# ClearPage 2.4.1
+# ClearPage 2.4.2
 
 A local Windows application for watermark cleanup in PDFs and scanned images.
 
@@ -73,6 +73,20 @@ uses the uploaded document's existing authorization and does not spend another c
 Digital signatures and encrypted PDFs require an unsigned, unlocked copy.
 
 ## Light-gray marks on black ink scans
+
+Choose **NOT VALID · gray diagonal** for the supported large gray NOT VALID
+lettering across scanned documents. Suggestions check the first, middle and last
+pages; preview, clean all pages, compare, select the cleaned pages and download.
+The phrase is aligned separately on each page. Cleanup uses native scan pixels
+and keeps every original dark pixel (levels 0–75), colored ink, and pixels outside
+the watermark scope unchanged. No OCR, generated words or cloud service is used.
+Faint text and intersections still need review. Unsupported layouts and weak
+matches stay unchanged. Selected export retains page dimensions, cropping,
+rotation and order, and leaves unchecked pages original.
+
+The bundled binary mask contains only the watermark shape. Customer documents
+and text crops are excluded. Synthetic tests cover matching/rejection, JPEG and
+alpha guards, pixel preservation, cancellation, native previews and selective export.
 
 For large diagonal gray **Unofficial Copy** lettering, use **Unofficial copy**.
 The preset retains strong matches to existing layouts and automatically aligns

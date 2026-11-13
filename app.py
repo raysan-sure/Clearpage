@@ -42,6 +42,7 @@ from clearpage.presets import union_parish
 from clearpage.presets import henry_red
 from clearpage.presets import lake_outline
 from clearpage.presets import cole_preview
+from clearpage.presets import not_valid
 from clearpage.presets import preble_scans
 from clearpage.presets import nassau_scans
 from clearpage.presets import scan_patterns
@@ -59,7 +60,7 @@ ROOT = Path(tempfile.mkdtemp(prefix='ClearPage-'))
 PROFILE_ROOT = Path(os.environ.get('LOCALAPPDATA', str(Path.home())))/'ClearPage'/'reviewed-pages'
 LOCK = threading.RLock()
 JOBS = {}
-NATIVE_OUTLINE = {method: module for module in (screened_scans, kane_outline, licensed_diagonal, hocking_outline, union_parish, henry_red, lake_outline, cole_preview)
+NATIVE_OUTLINE = {method: module for module in (screened_scans, kane_outline, licensed_diagonal, hocking_outline, union_parish, henry_red, lake_outline, cole_preview, not_valid)
                   for method in module.METHODS}
 SERVER = None
 HOST = None
@@ -198,7 +199,7 @@ def static(name):
     if name not in ('ui.js', 'ui.css', 'favicon.svg', 'app.js', 'style.css', 'repair.js', 'workspace.js', 'objects.js', 'sections.js', 'simple.css', 'simple.js',
                     'type-dotted-document.webp', 'type-dotted-map.webp', 'type-unofficial-copy.webp',
                     'type-overlay.webp', 'type-huntington.webp', 'type-repeated-diagonal.webp', 'type-polarity.svg',
-                    'type-preble.webp', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg', 'type-licensed-diagonal.svg', 'type-hocking-outline.svg', 'type-union-parish.webp', 'type-henry-red.webp', 'type-lake-outline.webp', 'type-cole-preview.webp'):
+                    'type-preble.webp', 'type-not-valid.svg', 'type-red-copy.svg', 'type-flat-gray.svg', 'type-repeated-copy.svg', 'type-nassau.svg', 'type-screened-unofficial.svg', 'type-kane-outline.svg', 'type-licensed-diagonal.svg', 'type-hocking-outline.svg', 'type-union-parish.webp', 'type-henry-red.webp', 'type-lake-outline.webp', 'type-cole-preview.webp'):
         return '', 404
     return send_file(BASE/'static'/name)
 
@@ -480,9 +481,19 @@ def cleanup_page(job, index, options):
 def process_page(job, index, options):
     if options['method'] in NATIVE_OUTLINE:
         module = NATIVE_OUTLINE[options['method']]
-        before = Image.open(original(job, index)).convert('RGB')
+        display = getattr(module, 'display_image', lambda *_: None)
+        before = display(job['source'], index)
+        if before is None:
+            before = Image.open(original(job, index)).convert('RGB')
+        else:
+            before = before.convert('RGB')
+            before.save(image_path(job, index))
         target, details = module.prepare(job['source'], index, job['dir'], lambda: job['cancel'])
-        after = render_page(target, 0)
+        after = display(target, 0)
+        if after is None:
+            after = render_page(target, 0)
+        else:
+            after = after.convert('RGB')
         after.save(image_path(job, index, True))
         overlay = np.array(before)
         changed = np.any(overlay != np.array(after), axis=2)

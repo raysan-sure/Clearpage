@@ -91,7 +91,7 @@ class SuggestionTests(unittest.TestCase):
         self.assertNotIn('suggestions',app.JOBS[key])
 
     def test_suggestion_examples_are_served(self):
-        for name in ('red-copy.svg','flat-gray.svg','polarity.svg','overlay.webp',
+        for name in ('not-valid.svg','red-copy.svg','flat-gray.svg','polarity.svg','overlay.webp',
                      'unofficial-copy.webp','huntington.webp','repeated-diagonal.webp',
                      'dotted-document.webp','dotted-map.webp','nassau.svg'):
             with self.client.get('/static/type-'+name) as response:
@@ -104,7 +104,7 @@ class SuggestionTests(unittest.TestCase):
         methods = [method for method, image in entries]
         supported = {'preset', 'overlay', 'polarity', 'gemini_draft'}
         for module in (app.scan_patterns, app.dotted_scans, app.screened_scans,
-                       app.kane_outline, app.licensed_diagonal, app.hocking_outline, app.union_parish, app.henry_red, app.lake_outline, app.cole_preview, app.preble_scans, app.nassau_scans):
+                       app.kane_outline, app.licensed_diagonal, app.hocking_outline, app.union_parish, app.henry_red, app.lake_outline, app.cole_preview, app.not_valid, app.preble_scans, app.nassau_scans):
             supported.update(module.METHODS)
         self.assertEqual(set(methods), supported)
         self.assertEqual(len(methods), len(supported), 'Duplicate cleanup choice')

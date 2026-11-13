@@ -12,6 +12,7 @@ import CleanupSuggestions from './CleanupSuggestions';
 import CompressionDialog from './CompressionDialog';
 
 const presets = [
+  { id: 'not_valid', title: 'NOT VALID · gray diagonal', description: 'Choose this for large gray NOT VALID lettering running diagonally down the scan. Preserves dark and colored ink at the original resolution. Review faint text and crossings before downloading.', image: 'not-valid', tag: 'Scanned documents' },
   { id: 'cole_preview', title: 'Cole County · crossed preview', description: 'Choose this for a large X with “Cole” on the left and “Preview” on the right. Check any words where the lines or labels crossed the text.', image: 'cole-preview', tag: 'County scans' },
   { id: 'lake_outline', title: 'Lake County · hollow UNOFFICIAL COPY', description: 'Choose this when thin outlines spell UNOFFICIAL COPY from the upper left to the lower right. Preview where a letter crosses handwriting.', image: 'lake-outline', tag: 'County scans' },
   { id: 'henry_red', title: 'Henry County · red diagonal stamp', description: 'Use for Henry County scans with a red “NOT AN OFFICIAL COPY” stamp running from bottom left to top right. Include at least two different stamped pages in the same PDF.', image: 'henry-red', tag: 'County scans' },
@@ -89,7 +90,7 @@ function PdfTypeDialog({ item, selected, onSelect, onClose }) {
   useEffect(() => { const previous = document.activeElement; dialogRef.current?.showModal(); return () => previous?.focus(); }, []);
   return <dialog ref={dialogRef} className="pdf-type-dialog" aria-labelledby="pdf-type-title" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }}><div className="pdf-type-dialog-content">
     <button autoFocus className="icon-button close-help" aria-label="Close PDF type" onClick={onClose}><X size={20} /></button>
-    <div className="pdf-type-example"><img src={`/static/type-${item.image}.${['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(item.image) ? 'svg' : 'webp'}`} alt={`${item.title} example`} /></div>
+    <div className="pdf-type-example"><img src={`/static/type-${item.image}.${['not-valid','polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(item.image) ? 'svg' : 'webp'}`} alt={`${item.title} example`} /></div>
     <div className="pdf-type-details"><span className="eyebrow">{item.tag}</span><h2 id="pdf-type-title">{item.title}</h2><p>{item.description}</p><Button onClick={() => { onSelect(item.id); onClose(); }}>{selected ? <Check size={17} /> : <ArrowRight size={17} />}{selected ? 'Keep this PDF type' : 'Use this PDF type'}</Button></div>
   </div></dialog>;
 }
