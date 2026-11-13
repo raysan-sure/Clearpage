@@ -7,7 +7,7 @@ import urllib.error
 import urllib.request
 from clearpage.app_version import VERSION
 
-REPOSITORY = 'invicto-labs/Watermark-remover'
+REPOSITORY = 'raysan-sure/Clearpage'
 RELEASES = f'https://github.com/{REPOSITORY}/releases'
 _cache = {}
 _lock = threading.Lock()

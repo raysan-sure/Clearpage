@@ -128,6 +128,10 @@ class UpdateManager:
     def __init__(self, app, install=None):
         self.app = app
         self.install = Path(install or sys.executable).resolve().parent
+        try:
+            self.preview = json.loads((self.install/'package-manifest.json').read_text(encoding='utf-8')).get('preview') is True
+        except (OSError, ValueError):
+            self.preview = False
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.check = threading.Event()
@@ -161,6 +165,9 @@ class UpdateManager:
         download(release, archive, lambda percent: self.set(progress=percent))
         self.set(phase='verifying', message='Checking the downloaded update…')
         stage = extract(archive, self.work/'new', release['version'])
+        candidate = json.loads((stage/'package-manifest.json').read_text(encoding='utf-8'))
+        if not self.preview and candidate.get('preview') is not False:
+            raise ValueError('A production app cannot install a preview update. Your current app was kept.')
         # Run the current trusted helper from outside the app folder it replaces.
         shutil.copy2(self.install/'ClearPageUpdater.exe', self.work/'ClearPageUpdater.exe')
         write_json(self.work/'plan.json', dict(install=str(self.install), stage=str(stage),

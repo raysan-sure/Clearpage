@@ -1,5 +1,18 @@
 # ClearPage local download website
 
+## Vercel download site
+
+Deploy this directory only, with Framework Preset **Other**, no install/build
+command, and output directory `.`. For a Git-connected project, set Root Directory
+to `website`. The Python application and payment service are not deployed here.
+`vercel.json` keeps this a static HTML/CSS/JavaScript deployment.
+
+Download buttons check published stable releases in `raysan-sure/Clearpage`.
+When no stable release exists, they offer the explicitly approved
+`v2.3-preview.1` prerelease. Its verified `ClearPage-Windows-x64.zip` opens the
+Windows app, but PDF processing remains locked until payment hosting is configured.
+Payments remain disabled. The page labels this preview limitation before download.
+
 To preview with an explicitly built testing ZIP, run from the repository root:
 
 ```powershell
@@ -57,3 +70,8 @@ whole application folder. Never bundle merchant secrets or seller signing keys.
 
 The current Windows build requires online authorization. See ../docs/HOSTING.md for the
 Render deployment, persistent storage, secrets and build-order requirements.
+
+Live static website: https://clearpage-omega.vercel.app
+Vercel project: raysansure-2964/clearpage. Deployed with the CLI.
+Automatic Git deployments require a GitHub login connection in this Vercel account.
+

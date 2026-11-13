@@ -59,7 +59,7 @@ def run(preview=False, dist_dir=None, work_dir=None, assets_dir=None):
         + ('Preview: payments are not enabled until the seller finishes configuration.\n' if preview else ''), encoding='utf-8')
     assets = Path(assets_dir or ROOT/'release-assets').resolve()
     from clearpage.update_install import ENTRIES
-    (bundle/'package-manifest.json').write_text(json.dumps(dict(format=1, edition='Standard', version=value,
+    (bundle/'package-manifest.json').write_text(json.dumps(dict(format=1, edition='Standard', preview=preview, version=value,
         entries=[name for name in ENTRIES if name == 'package-manifest.json' or (bundle/name).exists()])), encoding='utf-8')
     assets.mkdir(exist_ok=False)
     archive = assets/f'ClearPage-{value}-Windows-x64.zip'
@@ -88,6 +88,7 @@ def run(preview=False, dist_dir=None, work_dir=None, assets_dir=None):
     (assets/f'ClearPage-{value}-SHA256.txt').write_text(
         f'{digest(archive)}  {archive.name}\n{digest(alias)}  {alias.name}\n',encoding='ascii')
     (assets/'release-notes.md').write_text(f'ClearPage {value} Standard for Windows x64.\n\n'
+        + ('Windows preview: payment hosting is not configured, so PDF processing remains locked. This release adds automatic updates without enabling payments.\n\n' if preview else '') +
         'Download the complete ZIP and extract it into a new folder after closing the old version. '
         'Keep your existing ClearPage profile to preserve online account access. '
         'Future stable updates download and verify automatically; open work is saved and restored across an idle restart, with rollback if the new desktop fails. '

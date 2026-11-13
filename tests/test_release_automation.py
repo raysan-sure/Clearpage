@@ -42,6 +42,17 @@ class AutomatedReleaseTests(unittest.TestCase):
         self.report['updater_check']['rollback']=False
         self.write_report()
         with self.assertRaises(ValueError):publish_release.validate(self.root,'v3.0')
+    def test_preview_publication_requires_explicit_channel_and_cannot_replace_production(self):
+        self.report['preview']=True;self.write_report()
+        with self.assertRaises(ValueError):publish_release.validate(self.root,'v3.0')
+        self.assertEqual(publish_release.validate(self.root,'v3.0',allow_preview=True),self.archive)
+        stable=dict(tag_name='v2.9',draft=False,prerelease=False,assets=[dict(name='ClearPage-2.9-build-report.json',id=123)])
+        with patch('scripts.publish_release.subprocess.check_output',side_effect=[json.dumps([stable]),json.dumps(dict(preview=False))]),patch('scripts.publish_release.subprocess.run') as run:
+            with self.assertRaises(ValueError):publish_release.publish(self.root,'v3.0','owner/repo',allow_preview=True)
+            run.assert_not_called()
+        with patch('scripts.publish_release.subprocess.check_output',return_value='[]'),patch('scripts.publish_release.subprocess.run') as run:
+            publish_release.publish(self.root,'v3.0','owner/repo',allow_preview=True)
+            self.assertIn('Windows Preview',run.call_args_list[0].args[0][run.call_args_list[0].args[0].index('--title')+1])
     def test_assets_uploaded_before_draft_is_published(self):
         with patch('scripts.publish_release.subprocess.check_output',return_value='[]'),patch('scripts.publish_release.subprocess.run') as run:
             publish_release.publish(self.root,'v3.0','owner/repo')

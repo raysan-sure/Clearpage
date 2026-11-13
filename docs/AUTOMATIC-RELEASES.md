@@ -17,6 +17,13 @@ These are public customer settings. **Never put Razorpay Key Secret, webhook sec
 private signing PEM or its password into this workflow.** Those stay on Render.
 The workflow uses GitHub's built-in temporary token for the publish job only.
 
+For the current public Windows preview, the repository variable
+`CLEARPAGE_RELEASE_CHANNEL=preview` explicitly permits publication of a verified,
+billing-disabled preview package in the numeric stable update feed. Release titles
+and notes label it Windows Preview. This does not enable payments. Both publishing
+and the app refuse to replace a production edition with a preview. To ship the paid
+edition, configure the public payment settings and change the channel to `production`.
+
 ## Future pattern updates
 
 1. Add and test the new pattern/preset, including any required packaging assets.
@@ -84,7 +91,7 @@ downloads, partial installation failure, desktop failure, rollback and resume.
 Release publication requires the real bundled helper to pass its install,
 desktop restart, document resume and rollback checks.
 
-The first production release still requires the public payment service URL and
+The production channel still requires the public payment service URL and
 public signing key above. Missing configuration fails the build; the pipeline
 never silently distributes an inactive preview over a working production app.
 Neither the local changes nor a local preview build publish anything to GitHub.
@@ -93,7 +100,7 @@ Neither the local changes nor a local preview build publish anything to GitHub.
 
 Each verified production release includes `ClearPage-Windows-x64.zip`, identical
 to its versioned ZIP. All website download buttons point directly to
-`https://github.com/invicto-labs/Watermark-remover/releases/latest/download/ClearPage-Windows-x64.zip`.
+`https://github.com/raysan-sure/Clearpage/releases/latest/download/ClearPage-Windows-x64.zip`.
 GitHub resolves that URL to the latest published stable release, so future releases
 require no website edits or copying ZIPs to Render. Drafts and preview artifacts
 are never published by this workflow; the alias is checked against the same SHA-256

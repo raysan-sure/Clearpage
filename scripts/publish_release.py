@@ -14,12 +14,12 @@ def numeric(value):
     return (parts+(0,0,0))[:3]
 
 
-def validate(folder, tag):
+def validate(folder, tag, allow_preview=False):
     numeric(tag)
     value=tag[1:]
     archive=folder/f'ClearPage-{value}-Windows-x64.zip'
     report=json.loads((folder/f'ClearPage-{value}-build-report.json').read_text())
-    if report.get('version') != value or report.get('preview') is not False or report.get('owner_test') or not report.get('checks'):
+    if report.get('version') != value or type(report.get('preview')) is not bool or (report['preview'] and not allow_preview) or report.get('owner_test') or not report.get('checks'):
         raise ValueError('Only checked production packages may be published.')
     if report.get('sha256') != hashlib.sha256(archive.read_bytes()).hexdigest():
         raise ValueError('Package checksum does not match the verified report.')
@@ -40,10 +40,10 @@ def validate(folder, tag):
     return archive
 
 
-def publish(folder, tag, repo, existing_release=False, auto_main=False):
+def publish(folder, tag, repo, existing_release=False, auto_main=False, allow_preview=False):
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo):
         raise ValueError('Invalid repository.')
-    archive=validate(folder,tag)
+    archive=validate(folder,tag,allow_preview=allow_preview)
     report=json.loads((folder/f'ClearPage-{tag[1:]}-build-report.json').read_text())
     if auto_main:
         if not re.fullmatch(r'[a-f0-9]{40}', report.get('commit', '')):
@@ -56,6 +56,16 @@ def publish(folder, tag, repo, existing_release=False, auto_main=False):
     if existing and isinstance(existing[0],list):
         existing=[item for page in existing for item in page]
     for item in existing:
+        if report.get('preview') and item.get('tag_name') != tag and not item.get('draft') and not item.get('prerelease'):
+            published_tag=item.get('tag_name','')
+            try: numeric(published_tag)
+            except ValueError: continue
+            prior_asset=next((a for a in item.get('assets',[]) if a.get('name')==f'ClearPage-{published_tag[1:]}-build-report.json'),None)
+            if not prior_asset:
+                raise ValueError('Cannot establish the edition of the existing stable release; preview publication stopped.')
+            prior=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/releases/assets/{prior_asset["id"]}','-H','Accept: application/octet-stream'],text=True))
+            if prior.get('preview') is not True:
+                raise ValueError('Preview publication cannot replace a production release.')
         if item.get('tag_name') == tag:
             if not existing_release:
                 # A tag build may have already published before a release-event run.
@@ -77,8 +87,9 @@ def publish(folder, tag, repo, existing_release=False, auto_main=False):
             if older > numeric(tag): raise ValueError('Refusing to publish an older stable version.')
     if not existing_release:
         target=['--target',report['commit']] if auto_main else ['--verify-tag']
+        title='ClearPage '+tag[1:]+(' Windows Preview' if report.get('preview') else '')
         subprocess.run(['gh','release','create',tag,'--repo',repo,*target,'--draft',
-                        '--title','ClearPage '+tag[1:],'--notes-file',str(folder/'release-notes.md')],check=True)
+                        '--title',title,'--notes-file',str(folder/'release-notes.md')],check=True)
     files=[archive, folder/'ClearPage-Windows-x64.zip', folder/f'ClearPage-{tag[1:]}-build-report.json',folder/f'ClearPage-{tag[1:]}-SHA256.txt']
     subprocess.run(['gh','release','upload',tag,*map(str,files),'--repo',repo],check=True)
     if not existing_release:
@@ -88,4 +99,5 @@ def publish(folder, tag, repo, existing_release=False, auto_main=False):
 if __name__ == '__main__':
     publish(Path('release-assets'),os.environ['RELEASE_TAG'],os.environ['GH_REPO'],
             existing_release=os.environ.get('RELEASE_EXISTING')=='1',
-            auto_main=os.environ.get('RELEASE_AUTO_MAIN')=='1')
+            auto_main=os.environ.get('RELEASE_AUTO_MAIN')=='1',
+            allow_preview=os.environ.get('RELEASE_PREVIEW')=='1')

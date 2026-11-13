@@ -23,7 +23,7 @@ class HostingTests(unittest.TestCase):
                     response.close()
                 response = client.get('/downloads/ClearPage-Windows-x64.zip')
                 self.assertEqual(response.status_code, 302)
-                self.assertEqual(response.headers['Location'],'https://github.com/invicto-labs/Watermark-remover/releases/latest/download/ClearPage-Windows-x64.zip')
+                self.assertEqual(response.headers['Location'],'https://github.com/raysan-sure/Clearpage/releases/latest/download/ClearPage-Windows-x64.zip')
                 self.assertEqual(response.headers['Cache-Control'],'no-store')
                 response.close()
                 (fixture.root/'downloads').mkdir()

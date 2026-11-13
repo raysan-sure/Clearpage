@@ -25,6 +25,7 @@ jobs:
       PYTHONUTF8: '1'
       RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
       RELEASE_BUILD: ${{ github.event_name != 'workflow_dispatch' && '1' || '0' }}
+      RELEASE_CHANNEL: ${{ vars.CLEARPAGE_RELEASE_CHANNEL || 'production' }}
       CLEARPAGE_PAYMENT_SERVICE_URL: ${{ vars.CLEARPAGE_PAYMENT_SERVICE_URL }}
       CLEARPAGE_SIGNING_PUBLIC_KEY: ${{ vars.CLEARPAGE_SIGNING_PUBLIC_KEY }}
       CLEARPAGE_SELLER_NAME: Raysan sure
@@ -69,7 +70,7 @@ jobs:
           npm run build
       - name: Build, extract and verify Windows ZIP
         run: |
-          if ($env:RELEASE_BUILD -eq '1') {
+          if ($env:RELEASE_BUILD -eq '1' -and $env:RELEASE_CHANNEL -ne 'preview') {
             python scripts/standard_release.py
           } else {
             $env:CLEARPAGE_PAYMENT_SERVICE_URL = ''
@@ -108,4 +109,5 @@ jobs:
           RELEASE_TAG: ${{ needs.build.outputs.tag }}
           RELEASE_EXISTING: ${{ github.event_name == 'release' && '1' || '0' }}
           RELEASE_AUTO_MAIN: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+          RELEASE_PREVIEW: ${{ vars.CLEARPAGE_RELEASE_CHANNEL == 'preview' && '1' || '0' }}
         run: python scripts/publish_release.py
