@@ -23,12 +23,15 @@ The workflow uses GitHub's built-in temporary token for the publish job only.
 2. Run `python scripts/set_version.py 2.3.0` (use the next unused version).
    `clearpage/app_version.py` is the source of the app's version; the helper updates the
    README heading too. It does not commit or publish anything.
-3. Review and push the approved code. A push to `main` automatically runs tests,
-   rebuilds React, builds the Standard Windows EXE, extracts its ZIP, verifies
-   config-tamper rejection, and saves a preview artifact. It does not publish.
-4. When approved for customers, create and push a matching tag such as `v2.3.0`.
-   The tag must match `clearpage/app_version.py`. This triggers the production build and
-   automatic publication after all checks succeed.
+3. Push the approved code to `main`. The workflow chooses a version newer than
+   the latest stable release (incrementing its patch when necessary), runs tests,
+   rebuilds React and the Windows EXE, and checks the extracted app and updater.
+   A successful production build publishes its exact source commit automatically.
+   A superseded main build is skipped. Build version changes happen in CI only.
+4. Alternatively, push a numeric version tag such as `v2.4.1`, or publish a
+   stable GitHub release with that tag. Tagged builds use the tag's version.
+   A published empty stable release receives the verified assets; existing assets
+   are never replaced. Releases already containing the website ZIP are skipped.
 5. The publish job checks the exact artifact checksum and test report, refuses
    preview/older/existing releases, creates a draft, uploads the verified ZIP,
    build report and checksum, plus an identical stable-name website ZIP, then publishes the draft. Publish jobs serialize
@@ -46,18 +49,45 @@ inside the application. File selection and export use the desktop window's dialo
 
 ## Customer notification
 
-The React app checks GitHub shortly after opening. There is also a **Check for
-updates** button. Checks request only public release metadata: no PDFs, document
+The Windows Standard app checks GitHub shortly after opening and every fifteen
+minutes. **Check for updates** requests an immediate check. Checks request only
+public release metadata: no PDFs, document
 hashes, installation IDs or payment credentials are sent to GitHub. Results are
-cached for six hours in the running app; temporary failures for one minute.
+cached for fifteen minutes in the running app; temporary failures for one minute.
 These requests run without the document-processing lock. The current app must be
 updated once to this notification-enabled build before it can show future notices.
 
-The notice appears only for a newer stable, non-draft release containing a finished,
-nonempty ZIP with the expected name and GitHub download URL. It links to that ZIP
-and release notes. It never downloads in the background, executes an installer,
-patches running files or deletes the profile. Customers close the old app, extract
-the new ZIP to a new folder and retain their existing ClearPage profile.
+Only newer stable, non-draft releases with the expected finished Windows ZIP are
+eligible. Automatic downloads also require GitHub's SHA-256 asset digest. The
+app bounds download/extracted sizes, validates paths and the package manifest,
+and checks the checksum before staging. Downloads stay within GitHub's HTTPS
+release storage. Older assets without a digest retain a manual download link.
+
+After sixty seconds without interaction, ClearPage waits for processing and
+dialogs to finish, checkpoints open documents and page choices locally, and
+hands off to its independent `ClearPageUpdater.exe`. **Save and restart now**
+can start this sooner. The helper waits for the original process to exit,
+replaces only the known application entries, and restarts the same EXE path.
+Unrelated files in the app folder and the user's app profile are preserved.
+The new app restores the checkpoint. Its WebView2 window must report a loaded
+React interface and the expected version; otherwise the helper restores the
+previous files and restarts the old version. A failed version is held for 24 hours
+unless the user manually retries. The latest successful backup is retained;
+older completed updater folders are pruned. A blocked/read-only installation
+reports the error and offers the manual download rather than requesting elevation.
+
+Existing installations need this updater-enabled package once before they can
+update themselves. Source development runs, private owner-test builds and the
+optional AI edition do not replace their own files. The update mechanism is
+tested with generated PDFs and simulated release responses, including damaged
+downloads, partial installation failure, desktop failure, rollback and resume.
+Release publication requires the real bundled helper to pass its install,
+desktop restart, document resume and rollback checks.
+
+The first production release still requires the public payment service URL and
+public signing key above. Missing configuration fails the build; the pipeline
+never silently distributes an inactive preview over a working production app.
+Neither the local changes nor a local preview build publish anything to GitHub.
 
 ## Render and the website download
 
@@ -88,6 +118,6 @@ in addition to the backend and billing checks. Startup failures are recorded in
 `%LOCALAPPDATA%/ClearPage/startup-error.log`.
 
 Local checks can validate workflow syntax, unit-test release and update behavior,
-and run the Windows build/EXE verification. Only a future approved tag push can
+and run the Windows build/EXE verification. Only a future approved main/tag push or stable release can
 prove the GitHub-hosted runner and publication permissions work end to end. No
 GitHub publication or live payment is part of the local tests.

@@ -1,4 +1,4 @@
-# ClearPage 2.3
+# ClearPage 2.4.1
 
 A local Windows application for watermark cleanup in PDFs and scanned images.
 
@@ -636,10 +636,13 @@ The verified ZIP, SHA-256 checksums and build report are in `release-assets/`.
 The current **Windows release** workflow builds the Standard edition, not this
 optional AI package. Use **Actions → Windows release → Run workflow** for a
 preview without publishing. See [AUTOMATIC-RELEASES.md](docs/AUTOMATIC-RELEASES.md)
-for public payment configuration, version tags, and customer update notices.
+for public payment configuration, automatic releases, and automatic customer updates.
 
-Share the complete ZIP, including `_internal`. Code signing, a managed installer,
-and automatic employee updates are not included. The source and application
+Share the complete ZIP, including `_internal` and `ClearPageUpdater.exe`. The
+Standard app verifies future stable updates, saves work and restarts automatically
+after a minute without interaction, with rollback if startup fails. Existing
+users need the updater-enabled package once. Code signing and a managed installer
+are not included. The optional AI edition does not replace itself. The source and application
 contain no company document or repaired document text. The watermark preset
 contains only the repeating watermark pattern.
 

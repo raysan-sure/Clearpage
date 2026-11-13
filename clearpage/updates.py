@@ -1,4 +1,4 @@
-"""Bounded, cached GitHub release checks; never download or execute application code."""
+"""Bounded GitHub release discovery shared by notifications and automatic updates."""
 import json
 import re
 import threading
@@ -42,20 +42,24 @@ def describe(release):
     if not ready:
         result['message'] = 'A newer release exists, but its Windows download is not ready.'
         return result
+    asset = next(asset for asset in assets if isinstance(asset, dict) and asset.get('browser_download_url') == download)
+    digest = asset.get('digest', '')
+    verified = isinstance(digest, str) and re.fullmatch(r'sha256:[a-f0-9]{64}', digest) is not None
     result.update(available=True, version=value, package=package, download_url=download,
+                  sha256=digest[7:] if verified else None, size=asset['size'],
                   url=f'{RELEASES}/tag/{tag}', notes=str(release.get('body') or '')[:2000],
                   message=f'ClearPage {value} is available.')
     return result
 
 
-def latest_release():
-    # One request per running app per six hours; failures are cached for one minute.
+def latest_release(force=False):
+    # Background checks use one public metadata request every fifteen minutes.
     with _lock:
-        if _cache and time.monotonic() < _cache['until']:
+        if not force and _cache and time.monotonic() < _cache['until']:
             return dict(_cache['result'])
         req = urllib.request.Request(f'https://api.github.com/repos/{REPOSITORY}/releases/latest',
             headers={'Accept':'application/vnd.github+json', 'User-Agent':'ClearPage/'+VERSION})
-        ttl = 21600
+        ttl = 900
         try:
             with urllib.request.urlopen(req, timeout=5) as response:
                 raw = response.read(1024 * 1024 + 1)

@@ -17,9 +17,15 @@ from clearpage.presets.native_scan_profile import image_entry
 
 METHODS = ('cole_preview',)
 SIZE = (779, 1019)
+JPEG_SIZES = {(681, 898), (681, 899)}
+CACHE = 'cole-preview-v2'
 # Each box is in native scan coordinates, exclusive at right and bottom.
 LABELS = ((6,10,98,48), (7,520,92,558), (109,30,671,59),
           (109,957,669,983), (620,267,774,303), (620,776,774,811))
+JPEG_LABELS = ((6, 8, 80, 42), (6, 456, 81, 492), (100, 28, 581, 50),
+               (100, 844, 581, 868), (546, 234, 677, 266), (546, 683, 677, 716))
+JPEG_DIAGONALS = ((90, 120, 152, 190), (516, 120, 583, 190),
+                  (395, 535, 452, 600), (220, 535, 277, 600))
 
 
 def crop(array, box):
@@ -31,13 +37,25 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-@lru_cache(maxsize=1)
-def stamp():
-    with Image.open(RESOURCE_ROOT/'assets/cole-preview.png') as img:
+@lru_cache(maxsize=3)
+def stamp(size=SIZE):
+    filename = 'cole-preview.png' if size == SIZE else f'cole-preview-{size[1]}.png'
+    with Image.open(RESOURCE_ROOT / 'assets' / filename) as img:
         return np.array(img.convert('L'))
 
 
 def matches(gray):
+    size = gray.shape[::-1]
+    if size in JPEG_SIZES:
+        paper = stamp(size)
+        for box in JPEG_LABELS + JPEG_DIAGONALS:
+            observed, expected = crop(gray, box), crop(paper, box)
+            ink = expected < 150
+            if np.mean(observed[ink] <= expected[ink].astype(int) + 25) < .90:
+                return False
+            if np.mean(observed[expected == 255] > 210) < .40:
+                return False
+        return True
     paper = stamp()
     if gray.shape != paper.shape:
         return False
@@ -63,10 +81,18 @@ def scan(page):
     found = image_entry(page, 8, {'/DeviceGray'}, {'/FlateDecode'},
                         lambda w,h: (w,h) == SIZE)
     if found is None:
-        return None
+        found = image_entry(page, 8, {'/DeviceRGB', '/DeviceGray'}, {'/DCTDecode'},
+                            lambda w, h: (w, h) in JPEG_SIZES, allow_opaque_mask=True)
+        if found is None:
+            return None
     name, obj = found
-    gray = np.array(pikepdf.PdfImage(obj).as_pil_image())
-    return (name, gray) if matches(gray) else None
+    pixels = np.asarray(pikepdf.PdfImage(obj).as_pil_image(apply_mask=False))
+    if pixels.ndim == 3:
+        if pixels.shape[2] != 3 or not (np.array_equal(pixels[:,:,0], pixels[:,:,1])
+                                        and np.array_equal(pixels[:,:,0], pixels[:,:,2])):
+            return None
+        pixels = pixels[:,:,0]
+    return (name, pixels) if matches(pixels) else None
 
 
 def suggested(source, index):
@@ -74,8 +100,43 @@ def suggested(source, index):
         return scan(doc.pages[index]) is not None
 
 
+def display_image(source, index):
+    """Keep the native scan samples when the page paints only that full-page image."""
+    with pikepdf.open(source) as doc:
+        page = doc.pages[index]
+        objects = page.Resources.get('/XObject', {})
+        if len(objects) != 1:
+            return None
+        name, obj = next(iter(objects.items()))
+        if obj.get('/Subtype') != '/Image':
+            return None
+        size = int(obj.Width), int(obj.Height)
+        if size != SIZE and size not in JPEG_SIZES:
+            return None
+        left, bottom, right, top = map(float, page.cropbox)
+        width, height = right - left, top - bottom
+        if min(width, height) <= 0 or min(size[0]/width, size[1]/height) <= 2:
+            return None
+        ops = list(pikepdf.parse_content_stream(page))
+        if (not page.get('/Rotate', 0) and not page.get('/Annots')
+                and [str(ins.operator) for ins in ops] == ['q', 'cm', 'Do', 'Q']
+                and str(ops[2].operands[0]) == name
+                and np.allclose(list(map(float, ops[1].operands)),
+                                [width, 0, 0, height, left, bottom], rtol=0, atol=.001)
+                and abs(size[0] * height / width - size[1]) < 1
+                and '/OC' not in obj and '/Group' not in page
+                and obj.get('/ColorSpace') in (pikepdf.Name.DeviceGray, pikepdf.Name.DeviceRGB)
+                and not any(key in obj for key in ('/Mask', '/ImageMask', '/Decode'))):
+            # scan() accepts fully opaque soft masks. Other masks need the PDF compositor.
+            if '/SMask' not in obj or scan(page) is not None:
+                return pikepdf.PdfImage(obj).as_pil_image(apply_mask=False).copy()
+    # Preserve overlays, crop and rotation when displaying a composed PDF page.
+    from clearpage.pdf.engine import render_page
+    return render_page(source, index, scale=max(size[0]/width, size[1]/height))
+
+
 def restore(gray):
-    paper = stamp()
+    paper = stamp(gray.shape[::-1])
     out = gray.copy()
     visible = (paper < 255) & (paper >= 45)
     out[visible] = np.minimum(255, np.rint(gray[visible].astype('float32')*255/paper[visible]))
@@ -104,6 +165,15 @@ def restore(gray):
         costs.append(.3*np.abs(left-right)+6*(dl+dr))
     weights = np.exp(-(np.stack(costs)-np.min(costs,axis=0))/8)
     out[y,x] = np.rint((weights*np.stack(predictions)).sum(0)/weights.sum(0))
+    if gray.shape[::-1] in JPEG_SIZES:
+        # JPEG ringing extends beyond the letters. Clear it only on blank paper;
+        # nearby ink absent from the template may be faint handwriting or print.
+        printed = (paper < 210).astype(np.uint8)
+        footprint = cv2.dilate(printed, np.ones((3, 3), np.uint8))
+        evidence = ((gray < 230) & (footprint == 0)).astype(np.uint8)
+        near_ink = cv2.dilate(evidence, np.ones((9, 9), np.uint8))
+        margin = cv2.dilate(printed, np.ones((17, 17), np.uint8))
+        out[(margin != 0) & (near_ink == 0)] = 255
     return out
 
 
@@ -216,7 +286,7 @@ def clean_ocr(page, line, repairs):
 def prepare(source,index,directory,cancelled=lambda:False):
     if cancelled():
         raise InterruptedError('Cancelled')
-    target = Path(directory)/f'{index}-cole-preview-v1.pdf'
+    target = Path(directory)/f'{index}-{CACHE}.pdf'
     details = dict(scan_pattern=True,matched=False,changed=0,protected=0,reviewed=False,
                    uncertain=False,confidence=None,word_repairs=0)
     with pikepdf.open(source) as doc,pikepdf.new() as preview:
@@ -226,14 +296,18 @@ def prepare(source,index,directory,cancelled=lambda:False):
         if found:
             name,gray = found
             out = restore(gray)
-            line = next((r for r in LINES if digest(crop(gray,r[0]).tobytes())==r[1]),None)
+            legacy_layout = gray.shape[::-1] == SIZE
+            line = next((r for r in LINES if digest(crop(gray,r[0]).tobytes())==r[1]),None) if legacy_layout else None
             count = repair_words(doc,index,gray,out,line,cancelled) if line else 0
             obj = page.Resources.XObject[name]
             # The preview owns its copied page and image.
             obj.write(zlib.compress(out.tobytes()),filter=pikepdf.Name.FlateDecode)
+            obj.ColorSpace = pikepdf.Name.DeviceGray
+            if '/SMask' in obj:
+                del obj['/SMask']  # scan() verified that every alpha sample is opaque.
             if '/DecodeParms' in obj:
                 del obj['/DecodeParms']
-            stream = clean_ocr(page,line,count)
+            stream = clean_ocr(page,line,count) if legacy_layout else None
             if stream is not None:
                 page.Contents = preview.make_stream(stream)
             details.update(matched=True,uncertain=True,changed=int((gray!=out).sum()),word_repairs=count,
@@ -250,7 +324,7 @@ def write_clean(source,target,keep,directory,cancelled=lambda:False):
             page = doc.pages[i]
             if scan(page) is None:
                 continue
-            with pikepdf.open(Path(directory)/f'{i}-cole-preview-v1.pdf') as cached:
+            with pikepdf.open(Path(directory)/f'{i}-{CACHE}.pdf') as cached:
                 reviewed = cached.pages[0]
                 name = next(iter(reviewed.Resources.XObject.keys()))
                 replace_resource(page,name,doc.copy_foreign(reviewed.Resources.XObject[name]))

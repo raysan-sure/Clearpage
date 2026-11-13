@@ -8,7 +8,7 @@ from clearpage.presets.henry_red import save
 from clearpage.presets.hocking_outline import replace_resource
 
 
-def image_entry(page, bits, colors, filters, bounds):
+def image_entry(page, bits, colors, filters, bounds, *, allow_opaque_mask=False):
     objects = page.Resources.get('/XObject', {})
     if len(objects) != 1:
         return None
@@ -21,8 +21,19 @@ def image_entry(page, bits, colors, filters, bounds):
     codec = obj.get('/Filter')
     if isinstance(codec, pikepdf.Array) and len(codec) == 1:
         codec = codec[0]
-    if str(codec) not in filters or any(k in obj for k in ('/Mask', '/SMask', '/ImageMask', '/Decode')):
+    if str(codec) not in filters or any(k in obj for k in ('/Mask', '/ImageMask', '/Decode')):
         return None
+    if '/SMask' in obj:
+        if not allow_opaque_mask:
+            return None
+        mask = obj.SMask
+        if (not isinstance(mask, pikepdf.Stream) or mask.get('/Subtype') != '/Image'
+                or (mask.get('/Width'), mask.get('/Height')) != (w, h)
+                or mask.get('/ColorSpace') != '/DeviceGray' or mask.get('/BitsPerComponent') != 8
+                or any(k in mask for k in ('/Decode', '/ImageMask', '/Mask', '/SMask'))):
+            return None
+        if mask.read_bytes() != b'\xff' * (w * h):
+            return None
     draws = [str(args[0]) for args, op in pikepdf.parse_content_stream(page) if str(op) == 'Do']
     return (name, obj) if draws == [name] else None
 

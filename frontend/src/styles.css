@@ -314,11 +314,7 @@
 .document-viewer, .cleanup-panel { position: sticky; top: 24px; height: calc(100dvh - 48px); min-height: 420px; }
 .document-viewer { display: flex; flex-direction: column; }
 .viewer-toolbar, .page-navigation { flex-shrink: 0; }
-.cleanup-panel { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
-.cleanup-type-picker { display: grid; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #e6e4e3; }
-.cleanup-type-picker label, .preset-fieldset legend { font-size: 12px; font-weight: 600; }
-.cleanup-type-picker select { width: 100%; min-width: 0; padding: 10px 8px; border: 1px solid #d8cdc7; border-radius: 8px; background: white; font: inherit; font-size: 12px; }
-.cleanup-type-picker .text-button { justify-self: start; }
+.cleanup-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; container-type: inline-size; }
 .cleanup-options { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 @media (max-width: 800px) { .cleanup-options { max-height: 520px; } }
 .cleanup-panel .panel-actions { display: flex; }
@@ -636,16 +632,31 @@
 .gemini-trial input[type=password] { display: block; width: 100%; padding: 12px; margin: 8px 0 12px; border: 1px solid #999; border-radius: 8px; }
 .gemini-consent { display: block; }
 .gemini-consent input { margin-right: 8px; }
-/* Suggestions lead the chooser; every existing preset remains available. */
-.cleanup-suggestions { margin: 18px 0; padding: 16px; border: 1px solid #d8e4df; border-radius: 12px; background: #f6faf8; }
-.cleanup-suggestions h3 { margin: 0 0 10px; font-size: 16px; }
-.cleanup-suggestions p { font-size: 13px; line-height: 1.5; margin: 8px 0; }
-.suggestion-card { display: grid; gap: 5px; padding: 12px 0; border-top: 1px solid #d8e4df; }
-.suggestion-card strong { font-size: 14px; }
-.suggestion-example { width: 100%; height: 85px; object-fit: contain; background: white; border-radius: 6px; }
-.suggestion-card small, .suggestion-note { color: #52645b; }
-.suggestion-card .button { margin-top: 6px; width: 100%; }
-.all-cleanup-types > summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 12px 0; }
+/* Suggestions are the first cards in the same visible chooser grid. */
+.panel-title { flex-wrap: wrap; }
+.panel-title-copy { flex: 1; min-width: 130px; }
+.cleanup-type-count { margin-left: auto; align-self: flex-start; padding: 6px 8px; border: 1px solid #e6e4e3; border-radius: 6px; background: #faf9f8; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.cleanup-options { padding: 14px; background: #faf9f8; scrollbar-gutter: stable; }
+.cleanup-options .pdf-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.cleanup-options .pdf-type-card { padding: 10px; gap: 10px; box-shadow: 0 2px 5px #302b2a05; }
+.pdf-type-card.suggested { border-color: #a8c5b8; background: #f4faf7; }
+.pdf-type-card.suggested.selected { border-color: #dc6354; }
+.pdf-type-details-button { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; text-align: left; cursor: pointer; }
+.cleanup-options .pdf-type-thumbnail { order: 0; height: clamp(200px, 40cqw, 280px); aspect-ratio: auto; margin: 0; padding: 8px; background: white; border: 1px solid #eee9e5; }
+.cleanup-options .pdf-type-card-title { order: 0; margin: 4px 0 2px; font-size: 13px; line-height: 1.45; }
+.suggestion-badge { position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 5px; background: #e8f3ec; color: #3f6b55; font-size: 10px; font-weight: 600; line-height: 1.5; }
+.suggestion-badge svg { flex-shrink: 0; }
+.pdf-type-details-button:focus-visible { outline: 2px solid #dc6354; outline-offset: 3px; border-radius: 5px; }
+.suggestion-status, .suggestion-note { margin: 0 0 12px; color: #52645b; font-size: 11px; line-height: 1.5; }
+.suggestion-note { margin: 14px 0 0; }
+.cleanup-panel .panel-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cleanup-panel .panel-footnote { grid-column: 1 / -1; margin-top: 0; }
+@container (max-width: 360px) {
+  .panel-title .feature-icon { display: none; }
+  .cleanup-type-count { font-size: 10px; padding: 4px 6px; }
+  .cleanup-options .pdf-type-grid { grid-template-columns: minmax(0, 1fr); }
+  .cleanup-panel .panel-actions { grid-template-columns: minmax(0, 1fr); }
+}
 .upload-tool-note { margin-bottom: 18px; color: #726b64; font-size: 13px; }
 .compression-dialog { position: fixed; inset: 0; margin: auto; width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 0; border: 1px solid #e6e4e3; border-radius: 18px; background: white; color: #403c39; }
 .compression-dialog::backdrop { background: #302b2a66; backdrop-filter: blur(5px); }

@@ -26,6 +26,8 @@ datas = [(str(root/'assets/repeated-copy.png'), 'assets'), (str(root/'static'), 
          (str(root/'assets/preble-resampled.npz'), 'assets'),
          (str(root/'assets/lake-outline.npz'), 'assets'),
          (str(root/'assets/cole-preview.png'), 'assets'),
+         (str(root/'assets/cole-preview-898.png'), 'assets'),
+         (str(root/'assets/cole-preview-899.png'), 'assets'),
          (str(root/'assets/cumberland-red.npz'), 'assets'),
          (str(root/'assets/screened-unofficial.npz'), 'assets'),
          (str(root/'assets/kane-outline.npz'), 'assets'),
@@ -79,6 +81,12 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='ClearPage',
           console=False, strip=False, upx=False, icon=str(root/'assets/clearpage.ico'), version=str(version_path))
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='ClearPage')
+helper = Analysis([str(root/'scripts/update_helper.py')], pathex=[str(root)],
+                  excludes=['numpy', 'cv2', 'webview', 'torch', 'onnxruntime'], optimize=0)
+helper_exe = EXE(PYZ(helper.pure), helper.scripts, helper.binaries, helper.datas,
+                 name='ClearPageUpdater', console=False, strip=False, upx=False,
+                 icon=str(root/'assets/clearpage.ico'), version=str(version_path))
 # The CLR reads the host configuration beside the executable, outside _internal.
 import shutil
 shutil.copy2(root/'assets/ClearPage.exe.config', Path(coll.name)/'ClearPage.exe.config')
+shutil.copy2(helper_exe.name, Path(coll.name)/'ClearPageUpdater.exe')

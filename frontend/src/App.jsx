@@ -109,8 +109,8 @@ export default function App() {
     updateRequest.current = true;
     if (manual) setCheckingUpdate(true);
     try {
-      const result = await request('/api/update-status');
-      if (manual || result.available) setUpdateInfo(result);
+      const result = await request(manual ? '/api/check-update' : '/api/update-status', manual ? {} : undefined);
+      if (manual || result.available || (result.automatic && result.phase !== 'idle')) setUpdateInfo(result);
       if (manual) setDismissedUpdate('');
     } catch {
       if (manual) setUpdateInfo({ error: true, message: 'Could not check for updates. Try again when connected.' });
@@ -118,7 +118,8 @@ export default function App() {
   }
   useEffect(() => {
     const timer = setTimeout(() => checkUpdates(false), 4000);
-    return () => clearTimeout(timer);
+    const poll = setInterval(() => checkUpdates(false), 5000);
+    return () => { clearTimeout(timer); clearInterval(poll); };
   }, []);
   const [job, setJob] = useState(null);
   const [method, setMethod] = useState('dotted_document');
@@ -145,10 +146,50 @@ export default function App() {
   const [localAI, setLocalAI] = useState({ ready: false, message: 'Checking local AI availability…' });
   const fileRef = useRef(null);
   const uploadLock = useRef(false);
+  const lastActivity = useRef(Date.now());
+  const sentActivity = useRef(0);
+  const automaticUpdates = useRef(false);
+  automaticUpdates.current = !!updateInfo?.automatic;
+  const activityPulse = useRef(0);
   const titleRef = useRef(null);
   const canvasRef = useRef(null);
   useCtrlWheelZoom(canvasRef, direction => setZoom(value => Math.max(50, Math.min(200, value + direction * 25))), view === 'workspace' && !!job);
   const stage = job && view === 'review' ? 2 : job && view === 'workspace' ? 1 : 0;
+  useEffect(() => {
+    const record = () => {
+      lastActivity.current = Date.now();
+      if (automaticUpdates.current && lastActivity.current - activityPulse.current > 500) {
+        activityPulse.current = lastActivity.current;
+        request('/api/update/activity', { active: true, can_restart: false }).catch(() => {});
+      }
+    };
+    for (const type of ['pointerdown', 'keydown', 'wheel']) window.addEventListener(type, record, { passive: true });
+    return () => { for (const type of ['pointerdown', 'keydown', 'wheel']) window.removeEventListener(type, record); };
+  }, []);
+  useEffect(() => {
+    if (!updateInfo?.automatic) return;
+    const heartbeat = () => {
+      const active = lastActivity.current > sentActivity.current;
+      sentActivity.current = lastActivity.current;
+      const editing = document.activeElement?.matches('input, textarea, select, [contenteditable="true"]');
+      request('/api/update/activity', { active, can_restart: !busy && !editing && !help && !pdfType && !showBilling && !showAdmin && !showCompression && !cleanupProgress }).catch(() => {});
+    };
+    heartbeat();
+    const timer = setInterval(heartbeat, 5000);
+    return () => clearInterval(timer);
+  }, [updateInfo?.automatic, busy, help, pdfType, showBilling, showAdmin, showCompression, cleanupProgress]);
+  useEffect(() => {
+    if (!job || busy) return;
+    const timer = setTimeout(() => request(`/api/view/${job.id}`, { page, view, keep: [...selected], reviewed: [...reviewedAI], options: settings() }).catch(() => {}), 400);
+    return () => clearTimeout(timer);
+  }, [job?.id, busy, page, view, selected, reviewedAI, method]);
+  async function restartForUpdate() {
+    if (busy) return;
+    try {
+      if (job) await request(`/api/view/${job.id}`, { page, view, keep: [...selected], reviewed: [...reviewedAI], options: settings() });
+      setUpdateInfo(await request('/api/update/restart', {}));
+    } catch (failure) { setUpdateInfo(previous => ({ ...previous, error: true, message: failure.message })); }
+  }
   async function refreshBilling() {
     const next = await request('/api/billing'); setBilling(next); return next;
   }
@@ -182,6 +223,17 @@ export default function App() {
       try { current = await request('/api/session'); } catch { return; }
       if (active && !uploadLock.current && current?.state === 'exporting' && current.compression?.status === 'processing') {
         setJob(current); setView('workspace'); setShowCompression(true); return;
+      }
+      if (active && !uploadLock.current && current && ['ready', 'review', 'done', 'error', 'cancelled'].includes(current.state)) {
+        const restored = current.results || [];
+        setJob(current); setMethod(current.ui?.options?.method || current.options?.method || 'dotted_document');
+        setResults(restored); setPreviewed(new Set(restored.map(item => item.page)));
+        setSelected(new Set(current.ui?.keep || restored.filter(item => item.changed && !item.uncertain).map(item => item.page)));
+        setReviewedAI(new Set(current.ui?.reviewed || [])); setPage(current.ui?.page || 0);
+        setDownloaded(current.state === 'done');
+        setView(current.ui?.view || (restored.length ? 'review' : 'workspace'));
+        setMessage(current.message || 'Your document is ready.');
+        return;
       }
       if (!active || uploadLock.current || current?.state !== 'processing') return;
       setJob(current); setMethod(current.options?.method || 'dotted_document');
@@ -331,8 +383,8 @@ export default function App() {
       </header>
       <main className={view === 'review' ? 'main-content review-content' : view === 'workspace' ? 'main-content workspace-content' : 'main-content'}>
           {updateInfo && (!updateInfo.available || dismissedUpdate !== updateInfo.version) && <aside className={`update-notice ${updateInfo.available ? 'update-ready' : ''}`} role="status">
-            <div><strong>{updateInfo.message}</strong>{updateInfo.available && <p>Download the new ZIP, close ClearPage and extract it into a new folder. Keep your existing app profile so your online account access is preserved.</p>}</div>
-            {updateInfo.available && <div className="update-links"><a className="button button-primary" href={updateInfo.download_url} target="_blank" rel="noopener noreferrer">Download {updateInfo.version} ↗</a><a href={updateInfo.url} target="_blank" rel="noopener noreferrer">Release notes</a></div>}
+            <div><strong>{updateInfo.message}</strong>{updateInfo.available && <p>{updateInfo.automatic && updateInfo.phase !== 'manual' ? 'Your work stays on this computer. Open documents and page choices are restored after the update. Keep working to postpone the restart.' : 'Extract the new ZIP into a new folder and keep your existing ClearPage app profile.'}</p>}{updateInfo.phase === 'downloading' && <progress aria-label="Update download progress" value={updateInfo.progress || 0} max="100" />}</div>
+            {updateInfo.available && <div className="update-links">{updateInfo.automatic && updateInfo.phase === 'ready' ? <Button disabled={busy} onClick={restartForUpdate}>Save and restart now</Button> : (!updateInfo.automatic || ['manual', 'error'].includes(updateInfo.phase)) && <a className="button button-primary" href={updateInfo.download_url} target="_blank" rel="noopener noreferrer">Download {updateInfo.version} ↗</a>}<a href={updateInfo.url} target="_blank" rel="noopener noreferrer">Release notes</a></div>}
             <button className="icon-button" aria-label="Dismiss update notice" onClick={() => { if (updateInfo.available) setDismissedUpdate(updateInfo.version); else setUpdateInfo(null); }}><X size={17} /></button>
           </aside>}
         <input ref={fileRef} type="file" accept="application/pdf,.pdf" aria-label="Choose a PDF" className="sr-only" disabled={busy} onChange={event => upload(event.target.files?.[0])} />
@@ -363,11 +415,9 @@ export default function App() {
             {previewError && <div role="alert" className="status-banner error">Could not load the page preview.<button className="text-button" onClick={() => { setPreviewError(false); setRevision(value => value + 1); }}>Retry</button></div>}
             <div className="page-navigation"><button className="icon-button" aria-label="Previous page" disabled={busy || page === 0} onClick={() => { setPage(value => value - 1); setPreviewError(false); }}><ChevronLeft size={17} /></button><label>Page <select aria-label="Preview page" value={page} disabled={busy} onChange={event => { setPage(Number(event.target.value)); setPreviewError(false); }}>{Array.from({ length: job.count }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select> of {job.count}</label><button className="icon-button" aria-label="Next page" disabled={busy || page === job.count - 1} onClick={() => { setPage(value => value + 1); setPreviewError(false); }}><ChevronRight size={17} /></button></div>
           </section>
-          <aside className="cleanup-panel" aria-label="Cleanup settings"><div className="panel-title"><span className="feature-icon"><WandSparkles size={20} /></span><div><h2 id="pdf-type-heading">Choose your PDF type</h2><p>{presets.length} cleanup types available.</p></div></div>
-            <div className="cleanup-type-picker"><label htmlFor="cleanup-type">All cleanup types ({presets.length})</label><select id="cleanup-type" value={method} disabled={busy} onChange={event => choosePreset(event.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><button type="button" className="text-button" disabled={busy} onClick={() => setPdfType(presets.find(item => item.id === method))}>View selected example<ArrowRight size={14} /></button></div>
-            <div className="cleanup-options">
-            <CleanupSuggestions state={suggestions} presets={presets} method={method} busy={busy} onChoose={choosePreset} />
-            <fieldset disabled={busy} className="preset-fieldset" aria-labelledby="cleanup-examples-heading"><legend id="cleanup-examples-heading">All cleanup examples</legend><div className="pdf-type-grid">{presets.map(item => <button type="button" key={item.id} className={'pdf-type-card ' + (method === item.id ? 'selected' : '')} aria-label={'View ' + item.title + ' PDF type'} aria-haspopup="dialog" onClick={() => setPdfType(item)}><span className="pdf-type-thumbnail"><img src={'/static/type-' + item.image + '.' + (['polarity','red-copy','flat-gray','repeated-copy','nassau','screened-unofficial','kane-outline','licensed-diagonal','hocking-outline'].includes(item.image) ? 'svg' : 'webp')} alt="" />{method === item.id && <span className="pdf-type-check"><Check size={13} /></span>}</span><span className="pdf-type-card-title">{item.title}<ArrowRight size={14} /></span><span className="pdf-type-tag">{item.tag}</span><span className="sr-only">{method === item.id ? 'Selected' : ''}</span></button>)}</div></fieldset>
+          <aside className="cleanup-panel" aria-label="Cleanup settings"><div className="panel-title"><span className="feature-icon"><WandSparkles size={20} /></span><div className="panel-title-copy"><h2 id="pdf-type-heading">Choose your PDF type</h2><p>Compare examples and choose a cleanup.</p></div><span className="cleanup-type-count">All cleanup types ({presets.length})</span></div>
+            <div className="cleanup-options" role="region" aria-labelledby="pdf-type-heading" tabIndex={0}>
+            <CleanupSuggestions state={suggestions} presets={presets} method={method} busy={busy} onChoose={choosePreset} onView={setPdfType} />
             {method === 'repeated_diagonal_ai' && <div className="note" role="status"><p>{localAI.message} Uses the earlier full cleanup coverage, then copies supported original strokes back into the result. Covered words, signatures and barcodes can still change; inspect every AI draft before export.</p></div>}
             </div>
             {method === 'gemini_draft' ? <GeminiTrial request={request} busy={busy} page={page} onTrial={geminiTrial} /> : <div className="panel-actions"><Button className="preview-action" onClick={preview} disabled={busy || (method === 'repeated_diagonal_ai' && !localAI.ready)}><ScanLine size={16} />Preview first page</Button>{results.length ? <Button className="review-action" onClick={() => navigate('review')} disabled={busy}><Check size={16} />Review pages<ArrowRight size={16} /></Button> : <Button className="clean-action" onClick={cleanAll} disabled={busy || (method === 'repeated_diagonal_ai' && !localAI.ready)}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <WandSparkles size={16} />}Clean all {job.count} {job.count === 1 ? 'page' : 'pages'}<ArrowRight size={16} /></Button>}<span className="panel-footnote"><ShieldCheck size={13} />Your original is always preserved.</span></div>}

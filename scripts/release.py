@@ -63,6 +63,8 @@ def collect_licenses(bundle, standard=False):
     covered = set()
     for dist in metadata.distributions():
         name = dist.metadata['Name']
+        if standard and name.lower().replace('_', '-') in ('torch', 'onnxruntime'):
+            continue
         safe_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', name)
         destination = target/f'{safe_name}-{dist.version}'
         count = 0

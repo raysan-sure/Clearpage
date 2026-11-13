@@ -1,2 +1,2 @@
 """Change this version before pushing a matching v-prefixed release tag."""
-VERSION = '2.3'
+VERSION = '2.4.1'

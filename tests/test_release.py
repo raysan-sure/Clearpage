@@ -64,6 +64,7 @@ class ReleaseVersionTests(unittest.TestCase):
             names += ['pywebview', 'pythonnet', 'clr-loader']
         distributions = [SimpleNamespace(metadata={'Name': name}, version='1', files=paths,
                           locate_file=lambda path: packages/path, read_text=lambda name: 'Metadata') for name in names]
+        distributions += [SimpleNamespace(metadata={'Name': name}) for name in ('torch', 'onnxruntime')]
         bundle = self.root/'bundle'
         bundle.mkdir()
         with patch.object(release.sys, 'base_prefix', str(python)), patch.object(release.metadata, 'distributions', return_value=distributions):
@@ -71,6 +72,8 @@ class ReleaseVersionTests(unittest.TestCase):
         self.assertEqual(len(list((bundle/'licenses').rglob('licenses/LICENSE.txt'))), len(names))
         self.assertFalse(list(bundle.rglob('*.pyc')))
         self.assertFalse(list(bundle.rglob('*.pyo')))
+        self.assertNotIn('torch', (bundle/'DEPENDENCIES.txt').read_text())
+        self.assertNotIn('onnxruntime', (bundle/'DEPENDENCIES.txt').read_text())
 
     def test_owner_profile_is_resolved_without_embedded_home_directory(self):
         from scripts.owner_test_build import profile_policy

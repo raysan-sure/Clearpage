@@ -14,6 +14,7 @@ class AutomatedReleaseTests(unittest.TestCase):
         (self.root/'ClearPage-Windows-x64.zip').write_bytes(self.archive.read_bytes())
         self.report=dict(version='3.0',preview=False,sha256=hashlib.sha256(self.archive.read_bytes()).hexdigest(),checks=[dict(mode=m,locked=True) for m in ('normal','environment-override','changed-config','missing-config')])
         self.report['desktop_check']=dict(renderer='edgechromium',ui_ready=True,download_marks=True)
+        self.report['updater_check']=dict(installed=True,rollback=True,resume=True,user_files_preserved=True)
         self.write_report()
         (self.root/'release-notes.md').write_text('Notes')
     def tearDown(self):self.temp.cleanup()
@@ -37,6 +38,10 @@ class AutomatedReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):publish_release.validate(self.root,'v3.0')
         alias.unlink()
         with self.assertRaises(ValueError):publish_release.validate(self.root,'v3.0')
+    def test_missing_updater_rollback_check_blocks_publication(self):
+        self.report['updater_check']['rollback']=False
+        self.write_report()
+        with self.assertRaises(ValueError):publish_release.validate(self.root,'v3.0')
     def test_assets_uploaded_before_draft_is_published(self):
         with patch('scripts.publish_release.subprocess.check_output',return_value='[]'),patch('scripts.publish_release.subprocess.run') as run:
             publish_release.publish(self.root,'v3.0','owner/repo')
@@ -54,6 +59,22 @@ class AutomatedReleaseTests(unittest.TestCase):
             with patch('scripts.publish_release.subprocess.check_output') as network:
                 with self.assertRaises(ValueError):publish_release.publish(self.root,tag,'owner/repo')
                 network.assert_not_called()
+    def test_published_empty_stable_release_receives_verified_assets(self):
+        item=dict(tag_name='v3.0',draft=False,prerelease=False,assets=[])
+        with patch('scripts.publish_release.subprocess.check_output',return_value=json.dumps([item])),patch('scripts.publish_release.subprocess.run') as run:
+            publish_release.publish(self.root,'v3.0','owner/repo',existing_release=True)
+            commands=[call.args[0] for call in run.call_args_list]
+            self.assertEqual([cmd[2] for cmd in commands],['upload'])
+            self.assertNotIn('--clobber',commands[0])
+    def test_main_publish_targets_exact_commit_and_skips_superseded_build(self):
+        self.report['commit']='a'*40;self.write_report()
+        with patch('scripts.publish_release.subprocess.check_output',side_effect=[json.dumps(dict(sha='a'*40)),'[]']),patch('scripts.publish_release.subprocess.run') as run:
+            publish_release.publish(self.root,'v3.0','owner/repo',auto_main=True)
+            self.assertIn('--target',run.call_args_list[0].args[0])
+            self.assertIn('a'*40,run.call_args_list[0].args[0])
+        with patch('scripts.publish_release.subprocess.check_output',return_value=json.dumps(dict(sha='b'*40))),patch('scripts.publish_release.subprocess.run') as run:
+            publish_release.publish(self.root,'v3.0','owner/repo',auto_main=True)
+            run.assert_not_called()
     def test_production_requires_https_and_preview_disables_payments(self):
         with patch.dict('os.environ',{'CLEARPAGE_BUILD_OWNER_TEST':'1'}):
             with self.assertRaises(ValueError):standard_release.run(preview=True)

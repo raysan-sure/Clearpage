@@ -13,6 +13,7 @@ import numpy as np
 from PIL import Image
 from flask import g, jsonify, request, send_file
 from clearpage import saved_work
+from clearpage import auto_update
 
 ACTIVE = ('processing', 'exporting', 'learning', 'restoring')
 from clearpage.app_version import VERSION
@@ -32,9 +33,11 @@ def register(a):
 
     @a.app.before_request
     def single_worker():
-        if request.method == 'POST' and request.path not in ('/api/queue/stop', '/api/quit') and not request.path.startswith('/api/cancel/'):
+        if request.method == 'POST' and not request.path.startswith('/api/update/') and request.path not in ('/api/check-update', '/api/queue/stop', '/api/quit') and not request.path.startswith('/api/cancel/'):
             a.LOCK.acquire()
             g.workspace_locked=True
+            if auto_update.manager and auto_update.manager.status()['phase'] == 'restarting':
+                raise ValueError('ClearPage is restarting to finish its update. Your work has been saved.')
             idle()
 
     @a.app.teardown_request
@@ -72,7 +75,8 @@ def register(a):
                 raise ValueError('Review each changed page before finishing this file.')
             previous=job.get('ui',{})
             job['ui'] = dict(page=page, keep=sorted(set(keep)), reviewed=sorted(set(reviewed)),
-                             options=draft, confirmed=bool(data.get('confirmed')) and job['state'] in ('review', 'done'))
+                             options=draft, view=data.get('view') if data.get('view') in ('upload', 'workspace', 'review') else previous.get('view'),
+                             confirmed=bool(data.get('confirmed')) and job['state'] in ('review', 'done'))
             if job['state']=='done' and job.get('export_keep') != job['ui']['keep']:
                 job['state']='review'
             if any(previous.get(k)!=job['ui'].get(k) for k in ('keep','options','confirmed')):
@@ -210,11 +214,31 @@ def register(a):
 
     @a.app.get('/api/update-status')
     def update_status():
-        return jsonify(latest_release())
+        return jsonify(auto_update.manager.status() if auto_update.manager else latest_release())
 
     @a.app.post('/api/check-update')
     def update():
-        return jsonify(latest_release())
+        if auto_update.manager:
+            auto_update.manager.check.set()
+            return jsonify(auto_update.manager.status())
+        return jsonify(latest_release(force=True))
+
+    @a.app.post('/api/update/activity')
+    def update_activity():
+        if auto_update.manager:
+            auto_update.manager.activity(request.get_json() or {})
+        return jsonify(ok=True)
+
+    @a.app.post('/api/update/restart')
+    def update_restart():
+        if not auto_update.manager:
+            raise ValueError('Automatic installation is available in the Windows package.')
+        try:
+            started = auto_update.manager.restart(force=True)
+        except (OSError, RuntimeError, ValueError) as error:
+            auto_update.manager.set(phase='error', error=True, message=str(error))
+            raise ValueError(str(error)) from error
+        return jsonify(started=started, **auto_update.manager.status())
 
     @a.app.get('/api/changes/<identifier>/<int:index>')
     def changes(identifier,index):

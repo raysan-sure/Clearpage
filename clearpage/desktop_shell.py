@@ -24,6 +24,17 @@ def open_window(url):
     # pywebview can otherwise fall back to MSHTML even when Edge was requested.
     # This synchronous event cancels window creation before that fallback appears.
     window.events.initialized += require_supported_renderer
+    if '--update-health-file' in sys.argv:
+        import time
+        from clearpage.auto_update import healthy_ui
+        def update_loaded():
+            deadline = time.monotonic()+30
+            while time.monotonic() < deadline:
+                if window.evaluate_js("Boolean(document.querySelector('#root button'))"):
+                    healthy_ui()
+                    return
+                time.sleep(.1)
+        window.events.loaded += update_loaded
     if '--desktop-smoke-info' in sys.argv:
         import json
         import time
@@ -45,6 +56,13 @@ def open_window(url):
                   icon=str(RESOURCE_ROOT/'assets/clearpage.ico'))
     if not renderer_state['supported']:
         raise RuntimeError('Microsoft Edge WebView2 Runtime is required.')
+
+
+def close_window():
+    import webview
+    if not webview.windows:
+        raise RuntimeError('The desktop window is not ready to restart.')
+    webview.windows[0].destroy()
 
 
 def set_app_identity():

@@ -54,10 +54,13 @@ def run(preview=False, dist_dir=None, work_dir=None, assets_dir=None):
         'Internet is required for online credits and document authorization.\n'
         'ClearPage opens in its own desktop window. Windows 10/11 x64 and Microsoft Edge WebView2 Runtime are required.\n'
         'If WebView2 is missing, install it from https://developer.microsoft.com/microsoft-edge/webview2/ then reopen ClearPage.\n'
-        'Update into a new folder after closing the old app. Preserve your existing ClearPage app profile; never delete it to update.\n'
+        'Updates download and verify automatically. ClearPage saves open work and restarts after a minute without interaction. Keep working to postpone. Your existing profile is preserved.\n'
         'Optional LaMa/ONNX models are not included. This executable is unsigned. Review cleanup output carefully.\n'
         + ('Preview: payments are not enabled until the seller finishes configuration.\n' if preview else ''), encoding='utf-8')
     assets = Path(assets_dir or ROOT/'release-assets').resolve()
+    from clearpage.update_install import ENTRIES
+    (bundle/'package-manifest.json').write_text(json.dumps(dict(format=1, edition='Standard', version=value,
+        entries=[name for name in ENTRIES if name == 'package-manifest.json' or (bundle/name).exists()])), encoding='utf-8')
     assets.mkdir(exist_ok=False)
     archive = assets/f'ClearPage-{value}-Windows-x64.zip'
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as output:
@@ -72,8 +75,10 @@ def run(preview=False, dist_dir=None, work_dir=None, assets_dir=None):
     from scripts.standard_smoke import check_package, check_desktop
     checks = check_package(extracted/'ClearPage', value)
     desktop_check = check_desktop(extracted/'ClearPage')
+    from scripts.update_smoke import check_updater
+    updater_check = check_updater(archive)
     report = dict(version=value, edition='Standard', preview=preview,
-                  package=archive.name, sha256=digest(archive), checks=checks, desktop_check=desktop_check,
+                  package=archive.name, sha256=digest(archive), checks=checks, desktop_check=desktop_check, updater_check=updater_check,
                   commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
                   publisher_signature='unsigned', limitation='Simulated payment/source regressions do not establish live Razorpay activation.')
     report['owner_test'] = False
@@ -85,6 +90,7 @@ def run(preview=False, dist_dir=None, work_dir=None, assets_dir=None):
     (assets/'release-notes.md').write_text(f'ClearPage {value} Standard for Windows x64.\n\n'
         'Download the complete ZIP and extract it into a new folder after closing the old version. '
         'Keep your existing ClearPage profile to preserve online account access. '
+        'Future stable updates download and verify automatically; open work is saved and restored across an idle restart, with rollback if the new desktop fails. '
         'Opens in a dedicated Windows window using Microsoft Edge WebView2 Runtime. '
         'Optional neural models are not included. The executable is unsigned. '
         'See the attached build report and checksum.\n',encoding='utf-8')

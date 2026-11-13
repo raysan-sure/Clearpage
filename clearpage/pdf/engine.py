@@ -50,12 +50,12 @@ def inspect_pdf(path):
     return count, sizes
 
 
-def render_page(path, index):
+def render_page(path, index, *, scale=SCALE):
     # All calls are serialized by the app; PDFium must not run concurrently.
     with pdfium.PdfDocument(str(path)) as document:
         page = document[index]
         w, h = page.get_size()
-        scale = min(SCALE, math.sqrt((MAX_PIXELS-20000)/(w*h)))
+        scale = min(scale, math.sqrt((MAX_PIXELS-20000)/(w*h)))
         bitmap = page.render(scale=scale)
         image = bitmap.to_pil().convert('RGB').copy()
         bitmap.close()

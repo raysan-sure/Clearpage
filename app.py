@@ -389,6 +389,19 @@ def page(identifier, index, kind):
             path = job['dir']/f'{index}-mask.png'
             if not path.exists():
                 raise ValueError('Generate a preview first.')
+        if kind != 'mask' and (job.get('options') or {}).get('method') in cole_preview.METHODS:
+            cleaned = kind == 'after' and path == image_path(job, index, True)
+            source = job['dir']/f'{index}-{cole_preview.CACHE}.pdf' if cleaned else job['source']
+            if source.is_file():
+                detail = job['dir']/f'{index}-{cole_preview.CACHE}-{kind}-display.png'
+                if not detail.exists() or detail.stat().st_mtime_ns < source.stat().st_mtime_ns:
+                    image = cole_preview.display_image(source, 0 if cleaned else index)
+                    if image is not None:
+                        image.save(detail)
+                    else:
+                        detail.unlink(missing_ok=True)
+                if detail.is_file():
+                    path = detail
         return send_file(path, mimetype='image/png')
 
 
@@ -1367,6 +1380,8 @@ def main():
         return
     worker = threading.Thread(target=SERVER.serve_forever, daemon=True)
     worker.start()
+    from clearpage import auto_update
+    updater = auto_update.start(sys.modules[__name__])
     try:
         from clearpage.desktop_shell import open_window
         if '--desktop-test-info' in sys.argv:
@@ -1380,6 +1395,8 @@ def main():
             show_startup_error(log_path)
         raise SystemExit(1)
     finally:
+        if updater:
+            updater.stop.set()
         WORK['stop'] = True
         for job in JOBS.values():
             job['cancel'] = True
